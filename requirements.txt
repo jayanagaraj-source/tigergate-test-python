@@ -1,3 +1,32 @@
 # Deliberately outdated SCA fixture.
+# Every "tg-expect" marker applies to the package pin on the next line.
+# The expected CVE list is a floor (known at fixture creation), not a ceiling.
+
+# tg-expect: SCA-001 | high | CVE-2018-18074,CVE-2023-32681,CVE-2024-35195,CVE-2024-47081 | requests 2.19.1 credential leak on redirect / cert verification bypass
 requests==2.19.1
+# tg-expect: SCA-002 | medium | CVE-2025-71176 | pytest 5.4.3 (also pulls in py<1.11, CVE-2022-42969 disputed, reported against "py")
 pytest==5.4.3
+# tg-expect: SCA-003 | critical | CVE-2019-14234,CVE-2020-7471,CVE-2022-28346,CVE-2019-12308 | Django 2.2.0 SQL injection + XSS (also EOL)
+Django==2.2.0
+# tg-expect: SCA-004 | high | CVE-2018-1000656,CVE-2019-1010083,CVE-2023-30861 | Flask 0.12.2 DoS and session cookie disclosure
+Flask==0.12.2
+# tg-expect: SCA-005 | high | CVE-2019-10906,CVE-2020-28493,CVE-2024-22195 | Jinja2 2.10 sandbox escape / ReDoS / XSS
+Jinja2==2.10
+# tg-expect: SCA-006 | critical | CVE-2020-1747,CVE-2020-14343 | PyYAML 5.3 arbitrary code execution via full_load
+PyYAML==5.3
+# tg-expect: SCA-007 | high | CVE-2019-11324,CVE-2019-11236,CVE-2020-26137,CVE-2023-43804 | urllib3 1.23 CRLF injection / cert handling / cookie leak
+urllib3==1.23
+# tg-expect: SCA-008 | critical | CVE-2019-14806,CVE-2023-25577,CVE-2024-34069 | Werkzeug 0.14.1 debugger PIN weakness / multipart DoS / debugger RCE
+Werkzeug==0.14.1
+# tg-expect: SCA-009 | critical | CVE-2020-5311,CVE-2020-5312,CVE-2020-5313,CVE-2021-25289,CVE-2022-22817 | Pillow 6.2.0 buffer overflows and ImageMath.eval code execution
+Pillow==6.2.0
+# tg-expect: SCA-010 | high | CVE-2018-10903,CVE-2020-25659,CVE-2023-0286,CVE-2023-50782 | cryptography 2.2 GCM tag truncation / Bleichenbacher timing / bundled OpenSSL
+cryptography==2.2
+# tg-expect: SCA-011 | high | CVE-2021-28957,CVE-2021-43818,CVE-2022-2309 | lxml 4.6.2 XSS in clean module / NULL deref
+lxml==4.6.2
+# tg-expect: SCA-012 | critical | CVE-2018-1000805,CVE-2022-24302,CVE-2023-48795 | paramiko 2.4.1 auth bypass / race condition / Terrapin
+paramiko==2.4.1
+# tg-expect: SCA-013 | high | CVE-2019-7164,CVE-2019-7548 | SQLAlchemy 1.2.17 SQL injection via order_by / group_by
+SQLAlchemy==1.2.17
+# tg-expect: SCA-014 | critical | CVE-2019-6446 | numpy 1.16.0 arbitrary code execution via pickle in numpy.load
+numpy==1.16.0

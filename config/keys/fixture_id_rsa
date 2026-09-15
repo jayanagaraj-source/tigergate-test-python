@@ -1,0 +1,16 @@
+# tg-expect: SECRET-060 | critical | private-key | PEM RSA private key (random body, not a parseable key)
+-----BEGIN RSA PRIVATE KEY-----
+Mxj2mUpFe7HqKuejD3aCqxYhSIXYaiSah6s86uUAizI4EQfAWKryq+rB3DfLLxPt
+liZU8Xi8TCb/bSCfNJVAwM5qC9vToI9gAJARgggLJiAJR9LdhJVsuxLiwznUot0y
+hRka5HdmWUCPkoXKrP/Y/xs7ThzakMl0MkDs1cdjm6+zK1yPLQIasYq6NSn2OX8g
+Ie6LOMMTTLno1UxKUq/6cTzPjcC8jbCqnjNDX2/XUWLBZ2InDreOdcEju+aOXvrf
+jTI82XPeb2YEqT834DI/ix5UjzqjMrnnmiA8CVmPvIJag89lsEIeKPnSbvf8TnCr
+LfRgBcScawlXL6Glbn1VP+B9mFt6Qb/B+IxzxzYzCi/3qAPZjGfD3L7Tfu/w85Gx
+OTTLMreaV+aO4sYM4yUslvu0kuEoKbF70QLPVIL4M/th7K9qTxN3KB+ILoR382bb
+Yw7Gquh7/XXQbeXv4MIXSzZvzVhjWIaJY7XHagxBKi3beHLkhHUtcnj5NGU2GiNP
+hbzUFX+IBQdcmBNozXP+RNQBAB6v9eLqpwAhXY6TYo7K9qfkbgLaTXLimJr14wL9
+6v72y7kirWNPuI6HEIekocmm9V9xQ4esHMjpU/mZvXWFm+UQtoSnKNlqli4U+bJ5
+mJ9qBIBP+ayqDlzOJ0CZOdDjv0LpG/Kuvj2sj5Sf6j2iTztkd+vKYHBkw85cKKIk
+bJA+gBzmyPy6uvvaQ3mLjpNwokxDLeikqBG41HoFTxlrOT502/MaTV58FxhFhN8D
+Xz7Cvut0K2xgpo1gVcr327uGSqfiyH55zCMfG3TK==
+-----END RSA PRIVATE KEY-----

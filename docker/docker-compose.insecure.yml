@@ -1,0 +1,24 @@
+# Deliberately insecure Compose fixture. Do not run.
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.insecure
+    # tg-expect: IAC-160 | critical | privileged-container | Compose service runs privileged
+    privileged: true
+    # tg-expect: IAC-161 | high | host-namespace | Compose service uses host network
+    network_mode: host
+    # tg-expect: IAC-162 | high | host-namespace | Compose service shares host PID namespace
+    pid: host
+    volumes:
+      # tg-expect: IAC-163 | critical | hostpath-mount | Docker socket mounted into container
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      # tg-expect: SECRET-102 | critical | generic-password | Plaintext database password in compose environment
+      POSTGRES_PASSWORD: "Pr0d-zpL6aPjyCi54iu!"
+  db:
+    # tg-expect: CONTAINER-002 | high | eol-base-image | EOL image postgres:9.6
+    image: postgres:9.6
+    ports:
+      # tg-expect: IAC-164 | medium | exposed-database | Database port published on all host interfaces
+      - "5432:5432"

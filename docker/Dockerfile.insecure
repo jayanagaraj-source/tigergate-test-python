@@ -1,0 +1,29 @@
+# Deliberately insecure Dockerfile fixture (IaC + container image scanning). Do not build for real use.
+# tg-expect: CONTAINER-001 | critical | eol-base-image | EOL base image python:3.6 on Debian buster (many OS + Python CVEs)
+FROM python:3.6-slim-buster
+
+# tg-expect: SECRET-100 | critical | aws-access-key-id | AWS access key baked into image ENV
+ENV AWS_ACCESS_KEY_ID=AKIAGNGVBZSI4KCDHJMQ
+# tg-expect: SECRET-101 | critical | github-pat | GitHub token passed as build ARG default
+ARG GITHUB_TOKEN=ghp_QdhJbYngmRZ4Xxdl7C9LoQNX3XKrJPBEziMk
+
+# tg-expect: IAC-150 | medium | add-remote-url | ADD fetches a remote URL (use COPY + verified download)
+ADD https://example.com/tools/installer.tar.gz /opt/installer.tar.gz
+
+# tg-expect: IAC-151 | high | curl-pipe-shell | Remote script piped to shell
+RUN curl -fsSL https://example.com/install.sh | sh
+
+# tg-expect: IAC-152 | low | apt-no-install-recommends | apt-get install without --no-install-recommends and cache cleanup
+RUN apt-get update && apt-get install -y openssh-server sudo
+
+WORKDIR /app
+COPY . .
+# tg-expect: IAC-153 | high | world-writable | chmod 777 on application directory
+RUN chmod -R 777 /app
+
+# tg-expect: IAC-154 | medium | exposed-ssh | SSH port exposed
+EXPOSE 22 5000
+
+# tg-expect: IAC-155 | high | run-as-root | Container explicitly runs as root (and no HEALTHCHECK defined)
+USER root
+CMD ["python", "src/sast/web_flask.py"]

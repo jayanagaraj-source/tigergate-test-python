@@ -1,0 +1,22 @@
+# Deliberately outdated SCA fixture (third manifest format - PEP 621 pyproject.toml).
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tigergate-test-python"
+version = "0.1.0"
+description = "Security-scanner validation fixture. Deliberately insecure. Do not deploy."
+requires-python = ">=3.8"
+dependencies = [
+    # tg-expect: SCA-030 | high | CVE-2023-37276,CVE-2024-23334 | aiohttp 3.8.0 request smuggling / static route path traversal
+    "aiohttp==3.8.0",
+    # tg-expect: SCA-031 | medium | CVE-2023-28370,CVE-2024-52804 | tornado 5.1 open redirect / cookie parsing DoS
+    "tornado==5.1",
+    # tg-expect: SCA-032 | high | CVE-2022-40023 | Mako 1.0.7 ReDoS in lexer
+    "Mako==1.0.7",
+    # tg-expect: SCA-033 | high | CVE-2017-11424,CVE-2022-29217 | PyJWT 1.5.0 algorithm confusion
+    "PyJWT==1.5.0",
+    # tg-negative: NEG-SCA-002 | packaging 24.2 has no published CVEs - must NOT be reported as vulnerable
+    "packaging==24.2",
+]

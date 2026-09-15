@@ -1,0 +1,27 @@
+# Deliberately insecure GitHub Actions workflow fixture.
+# Kept OUTSIDE .github/workflows on purpose so GitHub never executes it.
+# If your scanner only inspects .github/workflows/, copy it there in a throwaway fork.
+name: insecure-fixture
+on:
+  # tg-expect: IAC-170 | critical | pull-request-target | pull_request_target combined with checkout of untrusted PR head
+  pull_request_target:
+  issues:
+    types: [opened]
+
+# tg-expect: IAC-171 | high | excessive-permissions | Workflow token granted write-all
+permissions: write-all
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # tg-expect: IAC-172 | medium | unpinned-action | Third-party action referenced by mutable branch instead of commit SHA
+      - uses: actions/checkout@master
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Greet issue author
+        # tg-expect: IAC-173 | critical | script-injection | Untrusted issue title interpolated into run script
+        run: 'echo "New issue: ${{ github.event.issue.title }}"'
+      - name: Install
+        # tg-expect: IAC-174 | high | curl-pipe-shell | Remote script piped to bash in CI
+        run: curl -sSL https://example.com/setup.sh | bash

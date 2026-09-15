@@ -1,0 +1,16 @@
+# Secret-scanner fixture: YAML application config. Values are fake.
+server:
+  port: 8080
+  # tg-negative: NEG-SECRET-020 | Non-secret hostname
+  host: api.example.com
+database:
+  user: payments
+  # tg-expect: SECRET-050 | high | generic-password | Hard-coded database password in YAML
+  password: "Pr0d-zpL6aPjyCi54iu!"
+integrations:
+  # tg-expect: SECRET-051 | high | slack-bot-token | Slack bot token in YAML
+  slack_token: xoxb-679832777590-6164029343833-LUEkakqchQqTYy3QILTfUoea
+  # tg-expect: SECRET-052 | high | sendgrid-api-key | SendGrid API key in YAML
+  sendgrid_key: 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
+  # tg-negative: NEG-SECRET-021 | Reference to a secret manager path, not a secret
+  stripe_key_ref: "vault:secret/data/payments#stripe_key"

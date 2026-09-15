@@ -1,0 +1,11 @@
+# Deliberately outdated SCA fixture (second manifest - scanners must discover requirements-*.txt).
+
+# tg-expect: SCA-020 | medium | CVE-2021-27291,CVE-2021-20270 | Pygments 2.5.2 ReDoS / infinite loop
+Pygments==2.5.2
+# tg-expect: SCA-021 | medium | CVE-2020-6802,CVE-2020-6816,CVE-2021-23980 | bleach 3.1.0 mutation XSS
+bleach==3.1.0
+# tg-expect: SCA-022 | high | CVE-2022-40897,CVE-2024-6345 | setuptools 39.0.1 ReDoS / remote code execution via package_index
+setuptools==39.0.1
+
+# tg-negative: NEG-SCA-001 | six has no published CVEs - must NOT be reported as vulnerable (still expected in SBOM)
+six==1.17.0

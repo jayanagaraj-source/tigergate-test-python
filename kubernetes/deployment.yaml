@@ -10,13 +10,18 @@ spec:
     metadata:
       labels: { app: tigergate-test-python }
     spec:
+      # tg-expect: IAC-100 | high | host-namespace | Pod shares host network namespace
       hostNetwork: true # Deliberately insecure IaC fixture.
       containers:
         - name: app
+          # tg-expect: IAC-101 | medium | image-tag-latest | Container image uses mutable :latest tag
           image: tigergate-test-python:latest
           securityContext:
+            # tg-expect: IAC-102 | critical | privileged-container | Privileged container
             privileged: true
+            # tg-expect: IAC-103 | high | run-as-root | Container runs as UID 0
             runAsUser: 0
           env:
             - name: DATABASE_PASSWORD
+              # tg-expect: SECRET-080 | medium | generic-password | Plaintext password in container env
               value: "fixture-password-not-real"

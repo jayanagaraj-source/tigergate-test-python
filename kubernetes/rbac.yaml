@@ -1,0 +1,52 @@
+# Deliberately over-privileged RBAC fixture. Do not apply.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: tg-fixture-everything
+rules:
+  # tg-expect: IAC-130 | critical | rbac-wildcard | ClusterRole grants all verbs on all resources in all API groups
+  - apiGroups: ["*"]
+    resources: ["*"]
+    verbs: ["*"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: tg-fixture-secret-reader
+rules:
+  - apiGroups: [""]
+    # tg-expect: IAC-131 | high | rbac-secrets-access | ClusterRole can read Secrets cluster-wide
+    resources: ["secrets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    # tg-expect: IAC-132 | high | rbac-pod-exec | ClusterRole allows exec into pods
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: tg-fixture-default-sa-admin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  # tg-expect: IAC-133 | critical | rbac-cluster-admin-binding | cluster-admin bound to default service account
+  name: cluster-admin
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: tg-fixture-anonymous
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: tg-fixture-everything
+subjects:
+  - kind: User
+    # tg-expect: IAC-134 | critical | rbac-anonymous | Wildcard ClusterRole bound to system:anonymous
+    name: system:anonymous
+    apiGroup: rbac.authorization.k8s.io

@@ -1,0 +1,323 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "version": 1,
+  "metadata": {
+    "component": {
+      "type": "application",
+      "name": "tigergate-test-python",
+      "version": "0.1.0"
+    },
+    "properties": [
+      {
+        "name": "tigergate:fixture:scope",
+        "value": "Direct PyPI dependencies only. A generated SBOM must contain at least these components; transitive dependencies (e.g. py, idna, chardet, certifi, MarkupSafe) are expected in addition when the scanner resolves them."
+      },
+      {
+        "name": "tigergate:fixture:also-expected",
+        "value": "Terraform providers hashicorp/aws@3.0.0, hashicorp/azurerm@2.0.0, hashicorp/google@3.90.0 if the scanner inventories IaC providers."
+      }
+    ]
+  },
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/aiohttp@3.8.0",
+      "name": "aiohttp",
+      "version": "3.8.0",
+      "purl": "pkg:pypi/aiohttp@3.8.0",
+      "properties": [
+        {
+          "name": "tigergate:fixture:source",
+          "value": "pyproject.toml:13"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/bleach@3.1.0",
+      "name": "bleach",
+      "version": "3.1.0",
+      "purl": "pkg:pypi/bleach@3.1.0",
+      "properties": [
+        {
+          "name": "tigergate:fixture:source",
+          "value": "requirements-dev.txt:6"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/cryptography@2.2",
+      "name": "cryptography",
+      "version": "2.2",
+      "purl": "pkg:pypi/cryptography@2.2",
+      "properties": [
+        {
+          "name": "tigergate:fixture:source",
+          "value": "requirements.txt:24"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/django@2.2.0",
+      "name": "Django",
+      "version": "2.2.0",
+      "purl": "pkg:pypi/django@2.2.0",
+      "properties": [
+        {
+          "name": "tigergate:fixture:source",
+          "value": "requirements.txt:10"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/flask@0.12.2",
+      "name": "Flask",
+      "version": "0.12.2",
+      "purl": "pkg:pypi/flask@0.12.2",
+      "properties": [
+        {
+          "name": "tigergate:fixture:source",
+          "value": "requirements.txt:12"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/jinja2@2.10",
+      "name": "Jinja2",
+      "version": "2.10",
+      "purl": "pkg:pypi/jinja2@2.10",
+      "properties": [
+        {
+          "name": "tigergate:fixture:source",
+          "value": "requirements.txt:14"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/lxml@4.6.2",
+      "name": "lxml",
+      "version": "4.6.2",
+      "purl": "pkg:pypi/lxml@4.6.2",
+      "properties": [
+        {
+          "name": "tigergate:fixture:source",
+          "value": "requirements.txt:26"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/mako@1.0.7",
+      "name": "Mako",
+      "version": "1.0.7",
+      "purl": "pkg:pypi/mako@1.0.7",
+      "properties": [
+        {
+          "name": "tigergate:fixture:source",
+          "value": "pyproject.toml:17"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/numpy@1.16.0",
+      "name": "numpy",
+      "version": "1.16.0",
+      "purl": "pkg:pypi/numpy@1.16.0",
+      "properties": [
+        {
+          "name": "tigergate:fixture:source",
+          "value": "requirements.txt:32"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/packaging@24.2",
+      "name": "packaging",
+      "version": "24.2",
+      "purl": "pkg:pypi/packaging@24.2",
+      "properties": [
+        {
+          "name": "tigergate:fixture:source",
+          "value": "pyproject.toml:21"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/paramiko@2.4.1",
+      "name": "paramiko",
+      "version": "2.4.1",
+      "purl": "pkg:pypi/paramiko@2.4.1",
+      "properties": [
+        {
+          "name": "tigergate:fixture:source",
+          "value": "requirements.txt:28"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/pillow@6.2.0",
+      "name": "Pillow",
+      "version": "6.2.0",
+      "purl": "pkg:pypi/pillow@6.2.0",
+      "properties": [
+        {
+          "name": "tigergate:fixture:source",
+          "value": "requirements.txt:22"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/pygments@2.5.2",
+      "name": "Pygments",
+      "version": "2.5.2",
+      "purl": "pkg:pypi/pygments@2.5.2",
+      "properties": [
+        {
+          "name": "tigergate:fixture:source",
+          "value": "requirements-dev.txt:4"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/pyjwt@1.5.0",
+      "name": "PyJWT",
+      "version": "1.5.0",
+      "purl": "pkg:pypi/pyjwt@1.5.0",
+      "properties": [
+        {
+          "name": "tigergate:fixture:source",
+          "value": "pyproject.toml:19"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/pytest@5.4.3",
+      "name": "pytest",
+      "version": "5.4.3",
+      "purl": "pkg:pypi/pytest@5.4.3",
+      "properties": [
+        {
+          "name": "tigergate:fixture:source",
+          "value": "requirements.txt:8"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/pyyaml@5.3",
+      "name": "PyYAML",
+      "version": "5.3",
+      "purl": "pkg:pypi/pyyaml@5.3",
+      "properties": [
+        {
+          "name": "tigergate:fixture:source",
+          "value": "requirements.txt:16"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/requests@2.19.1",
+      "name": "requests",
+      "version": "2.19.1",
+      "purl": "pkg:pypi/requests@2.19.1",
+      "properties": [
+        {
+          "name": "tigergate:fixture:source",
+          "value": "requirements.txt:6"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/setuptools@39.0.1",
+      "name": "setuptools",
+      "version": "39.0.1",
+      "purl": "pkg:pypi/setuptools@39.0.1",
+      "properties": [
+        {
+          "name": "tigergate:fixture:source",
+          "value": "requirements-dev.txt:8"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/six@1.17.0",
+      "name": "six",
+      "version": "1.17.0",
+      "purl": "pkg:pypi/six@1.17.0",
+      "properties": [
+        {
+          "name": "tigergate:fixture:source",
+          "value": "requirements-dev.txt:11"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/sqlalchemy@1.2.17",
+      "name": "SQLAlchemy",
+      "version": "1.2.17",
+      "purl": "pkg:pypi/sqlalchemy@1.2.17",
+      "properties": [
+        {
+          "name": "tigergate:fixture:source",
+          "value": "requirements.txt:30"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/tornado@5.1",
+      "name": "tornado",
+      "version": "5.1",
+      "purl": "pkg:pypi/tornado@5.1",
+      "properties": [
+        {
+          "name": "tigergate:fixture:source",
+          "value": "pyproject.toml:15"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/urllib3@1.23",
+      "name": "urllib3",
+      "version": "1.23",
+      "purl": "pkg:pypi/urllib3@1.23",
+      "properties": [
+        {
+          "name": "tigergate:fixture:source",
+          "value": "requirements.txt:18"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/werkzeug@0.14.1",
+      "name": "Werkzeug",
+      "version": "0.14.1",
+      "purl": "pkg:pypi/werkzeug@0.14.1",
+      "properties": [
+        {
+          "name": "tigergate:fixture:source",
+          "value": "requirements.txt:20"
+        }
+      ]
+    }
+  ]
+}

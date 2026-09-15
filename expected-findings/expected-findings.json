@@ -1,0 +1,3356 @@
+{
+  "description": "Ground truth for TigerGate scanner validation. A reported issue matching file+line (+/- 2 lines) and the description counts as a true positive; any issue on a negative-control line counts as a false positive (soft negatives are informational).",
+  "generator": "scripts/build_expected_findings.py",
+  "summary": {
+    "container": {
+      "expected": 2,
+      "negatives": 0
+    },
+    "iac": {
+      "expected": 93,
+      "negatives": 3
+    },
+    "sast": {
+      "expected": 79,
+      "negatives": 18
+    },
+    "sca": {
+      "expected": 23,
+      "negatives": 2
+    },
+    "secrets": {
+      "expected": 44,
+      "negatives": 12
+    }
+  },
+  "findings": [
+    {
+      "id": "CONTAINER-001",
+      "category": "container",
+      "file": "docker/Dockerfile.insecure",
+      "line": 3,
+      "severity": "critical",
+      "refs": [
+        "eol-base-image"
+      ],
+      "description": "EOL base image python:3.6 on Debian buster (many OS + Python CVEs)",
+      "code": "FROM python:3.6-slim-buster"
+    },
+    {
+      "id": "CONTAINER-002",
+      "category": "container",
+      "file": "docker/docker-compose.insecure.yml",
+      "line": 21,
+      "severity": "high",
+      "refs": [
+        "eol-base-image"
+      ],
+      "description": "EOL image postgres:9.6",
+      "code": "image: postgres:9.6"
+    },
+    {
+      "id": "IAC-001",
+      "category": "iac",
+      "file": "terraform/insecure.tf",
+      "line": 9,
+      "severity": "high",
+      "refs": [
+        "s3-public-access"
+      ],
+      "description": "S3 public access block: block_public_acls disabled",
+      "code": "block_public_acls = false"
+    },
+    {
+      "id": "IAC-002",
+      "category": "iac",
+      "file": "terraform/insecure.tf",
+      "line": 11,
+      "severity": "high",
+      "refs": [
+        "s3-public-access"
+      ],
+      "description": "S3 public access block: block_public_policy disabled",
+      "code": "block_public_policy = false"
+    },
+    {
+      "id": "IAC-003",
+      "category": "iac",
+      "file": "terraform/insecure.tf",
+      "line": 13,
+      "severity": "high",
+      "refs": [
+        "s3-public-access"
+      ],
+      "description": "S3 public access block: ignore_public_acls disabled",
+      "code": "ignore_public_acls = false"
+    },
+    {
+      "id": "IAC-004",
+      "category": "iac",
+      "file": "terraform/insecure.tf",
+      "line": 15,
+      "severity": "high",
+      "refs": [
+        "s3-public-access"
+      ],
+      "description": "S3 public access block: restrict_public_buckets disabled",
+      "code": "restrict_public_buckets = false"
+    },
+    {
+      "id": "IAC-010",
+      "category": "iac",
+      "file": "terraform/aws_advanced.tf",
+      "line": 17,
+      "severity": "critical",
+      "refs": [
+        "public-ingress-admin-port"
+      ],
+      "description": "Security group allows SSH (22) from 0.0.0.0/0",
+      "code": "cidr_blocks = [\"0.0.0.0/0\"]"
+    },
+    {
+      "id": "IAC-011",
+      "category": "iac",
+      "file": "terraform/aws_advanced.tf",
+      "line": 26,
+      "severity": "critical",
+      "refs": [
+        "public-ingress-admin-port"
+      ],
+      "description": "Security group allows RDP (3389) from 0.0.0.0/0",
+      "code": "cidr_blocks = [\"0.0.0.0/0\"]"
+    },
+    {
+      "id": "IAC-012",
+      "category": "iac",
+      "file": "terraform/aws_advanced.tf",
+      "line": 34,
+      "severity": "medium",
+      "refs": [
+        "unrestricted-egress"
+      ],
+      "description": "Security group allows unrestricted egress to ::/0",
+      "code": "ipv6_cidr_blocks = [\"::/0\"]"
+    },
+    {
+      "id": "IAC-013",
+      "category": "iac",
+      "file": "terraform/aws_advanced.tf",
+      "line": 47,
+      "severity": "critical",
+      "refs": [
+        "public-database"
+      ],
+      "description": "RDS instance publicly accessible",
+      "code": "publicly_accessible = true"
+    },
+    {
+      "id": "IAC-014",
+      "category": "iac",
+      "file": "terraform/aws_advanced.tf",
+      "line": 49,
+      "severity": "high",
+      "refs": [
+        "encryption-at-rest"
+      ],
+      "description": "RDS storage not encrypted",
+      "code": "storage_encrypted = false"
+    },
+    {
+      "id": "IAC-015",
+      "category": "iac",
+      "file": "terraform/aws_advanced.tf",
+      "line": 51,
+      "severity": "medium",
+      "refs": [
+        "backup-disabled"
+      ],
+      "description": "RDS automated backups disabled",
+      "code": "backup_retention_period = 0"
+    },
+    {
+      "id": "IAC-016",
+      "category": "iac",
+      "file": "terraform/aws_advanced.tf",
+      "line": 53,
+      "severity": "low",
+      "refs": [
+        "deletion-protection"
+      ],
+      "description": "RDS deletion protection disabled",
+      "code": "deletion_protection = false"
+    },
+    {
+      "id": "IAC-017",
+      "category": "iac",
+      "file": "terraform/aws_advanced.tf",
+      "line": 58,
+      "severity": "high",
+      "refs": [
+        "encryption-at-rest"
+      ],
+      "description": "S3 bucket without server-side encryption configuration",
+      "code": "resource \"aws_s3_bucket\" \"reports\" {"
+    },
+    {
+      "id": "IAC-018",
+      "category": "iac",
+      "file": "terraform/aws_advanced.tf",
+      "line": 61,
+      "severity": "critical",
+      "refs": [
+        "public-storage"
+      ],
+      "description": "S3 bucket ACL public-read-write",
+      "code": "acl = \"public-read-write\""
+    },
+    {
+      "id": "IAC-019",
+      "category": "iac",
+      "file": "terraform/aws_advanced.tf",
+      "line": 65,
+      "severity": "medium",
+      "refs": [
+        "versioning-disabled"
+      ],
+      "description": "S3 bucket versioning disabled",
+      "code": "enabled = false"
+    },
+    {
+      "id": "IAC-020",
+      "category": "iac",
+      "file": "terraform/aws_advanced.tf",
+      "line": 76,
+      "severity": "critical",
+      "refs": [
+        "public-storage"
+      ],
+      "description": "S3 bucket policy grants access to Principal \"*\"",
+      "code": "Principal = \"*\""
+    },
+    {
+      "id": "IAC-021",
+      "category": "iac",
+      "file": "terraform/aws_advanced.tf",
+      "line": 90,
+      "severity": "critical",
+      "refs": [
+        "iam-wildcard"
+      ],
+      "description": "IAM policy allows Action \"*\" on Resource \"*\"",
+      "code": "Action   = \"*\""
+    },
+    {
+      "id": "IAC-022",
+      "category": "iac",
+      "file": "terraform/aws_advanced.tf",
+      "line": 103,
+      "severity": "high",
+      "refs": [
+        "iam-admin-to-user"
+      ],
+      "description": "AdministratorAccess attached directly to IAM user",
+      "code": "policy_arn = \"arn:aws:iam::aws:policy/AdministratorAccess\""
+    },
+    {
+      "id": "IAC-023",
+      "category": "iac",
+      "file": "terraform/aws_advanced.tf",
+      "line": 111,
+      "severity": "medium",
+      "refs": [
+        "public-ip"
+      ],
+      "description": "EC2 instance gets a public IP address",
+      "code": "associate_public_ip_address = true"
+    },
+    {
+      "id": "IAC-024",
+      "category": "iac",
+      "file": "terraform/aws_advanced.tf",
+      "line": 118,
+      "severity": "high",
+      "refs": [
+        "imdsv1"
+      ],
+      "description": "IMDSv1 allowed (http_tokens optional)",
+      "code": "http_tokens = \"optional\""
+    },
+    {
+      "id": "IAC-025",
+      "category": "iac",
+      "file": "terraform/aws_advanced.tf",
+      "line": 123,
+      "severity": "high",
+      "refs": [
+        "encryption-at-rest"
+      ],
+      "description": "EC2 root volume not encrypted",
+      "code": "encrypted = false"
+    },
+    {
+      "id": "IAC-026",
+      "category": "iac",
+      "file": "terraform/aws_advanced.tf",
+      "line": 131,
+      "severity": "high",
+      "refs": [
+        "encryption-at-rest"
+      ],
+      "description": "EBS volume not encrypted",
+      "code": "encrypted = false"
+    },
+    {
+      "id": "IAC-027",
+      "category": "iac",
+      "file": "terraform/aws_advanced.tf",
+      "line": 137,
+      "severity": "medium",
+      "refs": [
+        "key-rotation"
+      ],
+      "description": "KMS key rotation disabled",
+      "code": "enable_key_rotation = false"
+    },
+    {
+      "id": "IAC-028",
+      "category": "iac",
+      "file": "terraform/aws_advanced.tf",
+      "line": 144,
+      "severity": "medium",
+      "refs": [
+        "audit-logging"
+      ],
+      "description": "CloudTrail log file validation disabled",
+      "code": "enable_log_file_validation = false"
+    },
+    {
+      "id": "IAC-029",
+      "category": "iac",
+      "file": "terraform/aws_advanced.tf",
+      "line": 146,
+      "severity": "medium",
+      "refs": [
+        "audit-logging"
+      ],
+      "description": "CloudTrail not multi-region",
+      "code": "is_multi_region_trail = false"
+    },
+    {
+      "id": "IAC-030",
+      "category": "iac",
+      "file": "terraform/aws_advanced.tf",
+      "line": 153,
+      "severity": "medium",
+      "refs": [
+        "public-load-balancer"
+      ],
+      "description": "Load balancer is internet-facing",
+      "code": "internal = false"
+    },
+    {
+      "id": "IAC-031",
+      "category": "iac",
+      "file": "terraform/aws_advanced.tf",
+      "line": 160,
+      "severity": "high",
+      "refs": [
+        "encryption-in-transit"
+      ],
+      "description": "Load balancer listener uses plaintext HTTP",
+      "code": "protocol = \"HTTP\""
+    },
+    {
+      "id": "IAC-032",
+      "category": "iac",
+      "file": "terraform/aws_advanced.tf",
+      "line": 177,
+      "severity": "high",
+      "refs": [
+        "weak-tls"
+      ],
+      "description": "Load balancer TLS policy allows TLS 1.0",
+      "code": "ssl_policy = \"ELBSecurityPolicy-TLS-1-0-2015-04\""
+    },
+    {
+      "id": "IAC-033",
+      "category": "iac",
+      "file": "terraform/aws_advanced.tf",
+      "line": 196,
+      "severity": "high",
+      "refs": [
+        "public-control-plane"
+      ],
+      "description": "EKS public API endpoint open to 0.0.0.0/0",
+      "code": "public_access_cidrs = [\"0.0.0.0/0\"]"
+    },
+    {
+      "id": "IAC-034",
+      "category": "iac",
+      "file": "terraform/aws_advanced.tf",
+      "line": 206,
+      "severity": "high",
+      "refs": [
+        "encryption-at-rest"
+      ],
+      "description": "ElastiCache at-rest encryption disabled",
+      "code": "at_rest_encryption_enabled = false"
+    },
+    {
+      "id": "IAC-035",
+      "category": "iac",
+      "file": "terraform/aws_advanced.tf",
+      "line": 208,
+      "severity": "high",
+      "refs": [
+        "encryption-in-transit"
+      ],
+      "description": "ElastiCache in-transit encryption disabled",
+      "code": "transit_encryption_enabled = false"
+    },
+    {
+      "id": "IAC-036",
+      "category": "iac",
+      "file": "terraform/aws_advanced.tf",
+      "line": 212,
+      "severity": "medium",
+      "refs": [
+        "encryption-at-rest"
+      ],
+      "description": "SQS queue without KMS encryption",
+      "code": "resource \"aws_sqs_queue\" \"jobs\" {"
+    },
+    {
+      "id": "IAC-050",
+      "category": "iac",
+      "file": "terraform/azure/main.tf",
+      "line": 28,
+      "severity": "high",
+      "refs": [
+        "encryption-in-transit"
+      ],
+      "description": "Storage account allows plaintext HTTP",
+      "code": "enable_https_traffic_only = false"
+    },
+    {
+      "id": "IAC-051",
+      "category": "iac",
+      "file": "terraform/azure/main.tf",
+      "line": 30,
+      "severity": "high",
+      "refs": [
+        "weak-tls"
+      ],
+      "description": "Storage account minimum TLS 1.0",
+      "code": "min_tls_version = \"TLS1_0\""
+    },
+    {
+      "id": "IAC-052",
+      "category": "iac",
+      "file": "terraform/azure/main.tf",
+      "line": 32,
+      "severity": "high",
+      "refs": [
+        "public-storage"
+      ],
+      "description": "Storage account allows public blob access",
+      "code": "allow_blob_public_access = true"
+    },
+    {
+      "id": "IAC-053",
+      "category": "iac",
+      "file": "terraform/azure/main.tf",
+      "line": 49,
+      "severity": "critical",
+      "refs": [
+        "public-ingress-admin-port"
+      ],
+      "description": "NSG allows SSH from any source",
+      "code": "source_address_prefix      = \"*\""
+    },
+    {
+      "id": "IAC-054",
+      "category": "iac",
+      "file": "terraform/azure/main.tf",
+      "line": 69,
+      "severity": "critical",
+      "refs": [
+        "public-database"
+      ],
+      "description": "SQL firewall allows entire IPv4 range",
+      "code": "start_ip_address = \"0.0.0.0\""
+    },
+    {
+      "id": "IAC-055",
+      "category": "iac",
+      "file": "terraform/azure/main.tf",
+      "line": 80,
+      "severity": "medium",
+      "refs": [
+        "key-protection"
+      ],
+      "description": "Key Vault purge protection disabled",
+      "code": "purge_protection_enabled = false"
+    },
+    {
+      "id": "IAC-056",
+      "category": "iac",
+      "file": "terraform/azure/main.tf",
+      "line": 101,
+      "severity": "high",
+      "refs": [
+        "rbac-disabled"
+      ],
+      "description": "AKS RBAC disabled",
+      "code": "enabled = false"
+    },
+    {
+      "id": "IAC-060",
+      "category": "iac",
+      "file": "terraform/gcp/main.tf",
+      "line": 21,
+      "severity": "critical",
+      "refs": [
+        "public-ingress-admin-port"
+      ],
+      "description": "Firewall allows SSH from 0.0.0.0/0",
+      "code": "source_ranges = [\"0.0.0.0/0\"]"
+    },
+    {
+      "id": "IAC-061",
+      "category": "iac",
+      "file": "terraform/gcp/main.tf",
+      "line": 28,
+      "severity": "medium",
+      "refs": [
+        "storage-access-control"
+      ],
+      "description": "Uniform bucket-level access disabled",
+      "code": "uniform_bucket_level_access = false"
+    },
+    {
+      "id": "IAC-062",
+      "category": "iac",
+      "file": "terraform/gcp/main.tf",
+      "line": 35,
+      "severity": "critical",
+      "refs": [
+        "public-storage"
+      ],
+      "description": "Bucket readable by allUsers",
+      "code": "member = \"allUsers\""
+    },
+    {
+      "id": "IAC-063",
+      "category": "iac",
+      "file": "terraform/gcp/main.tf",
+      "line": 43,
+      "severity": "medium",
+      "refs": [
+        "ip-forwarding"
+      ],
+      "description": "IP forwarding enabled on instance",
+      "code": "can_ip_forward = true"
+    },
+    {
+      "id": "IAC-064",
+      "category": "iac",
+      "file": "terraform/gcp/main.tf",
+      "line": 54,
+      "severity": "medium",
+      "refs": [
+        "public-ip"
+      ],
+      "description": "Instance has a public IP (access_config)",
+      "code": "access_config {}"
+    },
+    {
+      "id": "IAC-065",
+      "category": "iac",
+      "file": "terraform/gcp/main.tf",
+      "line": 59,
+      "severity": "medium",
+      "refs": [
+        "serial-port"
+      ],
+      "description": "Serial port access enabled",
+      "code": "serial-port-enable = \"true\""
+    },
+    {
+      "id": "IAC-066",
+      "category": "iac",
+      "file": "terraform/gcp/main.tf",
+      "line": 74,
+      "severity": "high",
+      "refs": [
+        "encryption-in-transit"
+      ],
+      "description": "Cloud SQL does not require SSL",
+      "code": "require_ssl = false"
+    },
+    {
+      "id": "IAC-067",
+      "category": "iac",
+      "file": "terraform/gcp/main.tf",
+      "line": 79,
+      "severity": "critical",
+      "refs": [
+        "public-database"
+      ],
+      "description": "Cloud SQL authorized network 0.0.0.0/0",
+      "code": "value = \"0.0.0.0/0\""
+    },
+    {
+      "id": "IAC-068",
+      "category": "iac",
+      "file": "terraform/gcp/main.tf",
+      "line": 90,
+      "severity": "high",
+      "refs": [
+        "rbac-disabled"
+      ],
+      "description": "GKE legacy ABAC enabled",
+      "code": "enable_legacy_abac = true"
+    },
+    {
+      "id": "IAC-100",
+      "category": "iac",
+      "file": "kubernetes/deployment.yaml",
+      "line": 14,
+      "severity": "high",
+      "refs": [
+        "host-namespace"
+      ],
+      "description": "Pod shares host network namespace",
+      "code": "hostNetwork: true # Deliberately insecure IaC fixture."
+    },
+    {
+      "id": "IAC-101",
+      "category": "iac",
+      "file": "kubernetes/deployment.yaml",
+      "line": 18,
+      "severity": "medium",
+      "refs": [
+        "image-tag-latest"
+      ],
+      "description": "Container image uses mutable :latest tag",
+      "code": "image: tigergate-test-python:latest"
+    },
+    {
+      "id": "IAC-102",
+      "category": "iac",
+      "file": "kubernetes/deployment.yaml",
+      "line": 21,
+      "severity": "critical",
+      "refs": [
+        "privileged-container"
+      ],
+      "description": "Privileged container",
+      "code": "privileged: true"
+    },
+    {
+      "id": "IAC-103",
+      "category": "iac",
+      "file": "kubernetes/deployment.yaml",
+      "line": 23,
+      "severity": "high",
+      "refs": [
+        "run-as-root"
+      ],
+      "description": "Container runs as UID 0",
+      "code": "runAsUser: 0"
+    },
+    {
+      "id": "IAC-110",
+      "category": "iac",
+      "file": "kubernetes/insecure-workload.yaml",
+      "line": 7,
+      "severity": "low",
+      "refs": [
+        "default-namespace"
+      ],
+      "description": "Workload deployed to default namespace",
+      "code": "namespace: default"
+    },
+    {
+      "id": "IAC-111",
+      "category": "iac",
+      "file": "kubernetes/insecure-workload.yaml",
+      "line": 10,
+      "severity": "high",
+      "refs": [
+        "host-namespace"
+      ],
+      "description": "Pod shares host PID namespace",
+      "code": "hostPID: true"
+    },
+    {
+      "id": "IAC-112",
+      "category": "iac",
+      "file": "kubernetes/insecure-workload.yaml",
+      "line": 12,
+      "severity": "high",
+      "refs": [
+        "host-namespace"
+      ],
+      "description": "Pod shares host IPC namespace",
+      "code": "hostIPC: true"
+    },
+    {
+      "id": "IAC-113",
+      "category": "iac",
+      "file": "kubernetes/insecure-workload.yaml",
+      "line": 14,
+      "severity": "medium",
+      "refs": [
+        "service-account-token"
+      ],
+      "description": "Service account token auto-mounted",
+      "code": "automountServiceAccountToken: true"
+    },
+    {
+      "id": "IAC-114",
+      "category": "iac",
+      "file": "kubernetes/insecure-workload.yaml",
+      "line": 18,
+      "severity": "medium",
+      "refs": [
+        "image-without-digest"
+      ],
+      "description": "Image from public registry without tag or digest",
+      "code": "image: docker.io/library/ubuntu"
+    },
+    {
+      "id": "IAC-115",
+      "category": "iac",
+      "file": "kubernetes/insecure-workload.yaml",
+      "line": 22,
+      "severity": "high",
+      "refs": [
+        "privilege-escalation"
+      ],
+      "description": "allowPrivilegeEscalation true",
+      "code": "allowPrivilegeEscalation: true"
+    },
+    {
+      "id": "IAC-116",
+      "category": "iac",
+      "file": "kubernetes/insecure-workload.yaml",
+      "line": 24,
+      "severity": "medium",
+      "refs": [
+        "writable-root-fs"
+      ],
+      "description": "Root filesystem writable",
+      "code": "readOnlyRootFilesystem: false"
+    },
+    {
+      "id": "IAC-117",
+      "category": "iac",
+      "file": "kubernetes/insecure-workload.yaml",
+      "line": 26,
+      "severity": "high",
+      "refs": [
+        "run-as-root"
+      ],
+      "description": "runAsNonRoot explicitly false",
+      "code": "runAsNonRoot: false"
+    },
+    {
+      "id": "IAC-118",
+      "category": "iac",
+      "file": "kubernetes/insecure-workload.yaml",
+      "line": 30,
+      "severity": "critical",
+      "refs": [
+        "dangerous-capability"
+      ],
+      "description": "SYS_ADMIN capability added",
+      "code": "- SYS_ADMIN"
+    },
+    {
+      "id": "IAC-119",
+      "category": "iac",
+      "file": "kubernetes/insecure-workload.yaml",
+      "line": 32,
+      "severity": "high",
+      "refs": [
+        "dangerous-capability"
+      ],
+      "description": "NET_ADMIN capability added",
+      "code": "- NET_ADMIN"
+    },
+    {
+      "id": "IAC-120",
+      "category": "iac",
+      "file": "kubernetes/insecure-workload.yaml",
+      "line": 34,
+      "severity": "medium",
+      "refs": [
+        "resource-limits"
+      ],
+      "description": "No CPU/memory requests or limits",
+      "code": "resources: {}"
+    },
+    {
+      "id": "IAC-121",
+      "category": "iac",
+      "file": "kubernetes/insecure-workload.yaml",
+      "line": 38,
+      "severity": "medium",
+      "refs": [
+        "host-port"
+      ],
+      "description": "Container port bound to host port",
+      "code": "hostPort: 22"
+    },
+    {
+      "id": "IAC-122",
+      "category": "iac",
+      "file": "kubernetes/insecure-workload.yaml",
+      "line": 48,
+      "severity": "critical",
+      "refs": [
+        "hostpath-mount"
+      ],
+      "description": "Host root filesystem mounted into pod",
+      "code": "path: /"
+    },
+    {
+      "id": "IAC-123",
+      "category": "iac",
+      "file": "kubernetes/insecure-workload.yaml",
+      "line": 52,
+      "severity": "critical",
+      "refs": [
+        "hostpath-mount"
+      ],
+      "description": "Docker socket mounted into pod",
+      "code": "path: /var/run/docker.sock"
+    },
+    {
+      "id": "IAC-124",
+      "category": "iac",
+      "file": "kubernetes/insecure-workload.yaml",
+      "line": 61,
+      "severity": "medium",
+      "refs": [
+        "exposed-service"
+      ],
+      "description": "Admin service exposed via NodePort",
+      "code": "type: NodePort"
+    },
+    {
+      "id": "IAC-130",
+      "category": "iac",
+      "file": "kubernetes/rbac.yaml",
+      "line": 8,
+      "severity": "critical",
+      "refs": [
+        "rbac-wildcard"
+      ],
+      "description": "ClusterRole grants all verbs on all resources in all API groups",
+      "code": "- apiGroups: [\"*\"]"
+    },
+    {
+      "id": "IAC-131",
+      "category": "iac",
+      "file": "kubernetes/rbac.yaml",
+      "line": 19,
+      "severity": "high",
+      "refs": [
+        "rbac-secrets-access"
+      ],
+      "description": "ClusterRole can read Secrets cluster-wide",
+      "code": "resources: [\"secrets\"]"
+    },
+    {
+      "id": "IAC-132",
+      "category": "iac",
+      "file": "kubernetes/rbac.yaml",
+      "line": 24,
+      "severity": "high",
+      "refs": [
+        "rbac-pod-exec"
+      ],
+      "description": "ClusterRole allows exec into pods",
+      "code": "verbs: [\"create\"]"
+    },
+    {
+      "id": "IAC-133",
+      "category": "iac",
+      "file": "kubernetes/rbac.yaml",
+      "line": 34,
+      "severity": "critical",
+      "refs": [
+        "rbac-cluster-admin-binding"
+      ],
+      "description": "cluster-admin bound to default service account",
+      "code": "name: cluster-admin"
+    },
+    {
+      "id": "IAC-134",
+      "category": "iac",
+      "file": "kubernetes/rbac.yaml",
+      "line": 51,
+      "severity": "critical",
+      "refs": [
+        "rbac-anonymous"
+      ],
+      "description": "Wildcard ClusterRole bound to system:anonymous",
+      "code": "name: system:anonymous"
+    },
+    {
+      "id": "IAC-140",
+      "category": "iac",
+      "file": "cloudformation/insecure-stack.yaml",
+      "line": 10,
+      "severity": "critical",
+      "refs": [
+        "public-storage"
+      ],
+      "description": "S3 bucket AccessControl PublicReadWrite",
+      "code": "AccessControl: PublicReadWrite"
+    },
+    {
+      "id": "IAC-141",
+      "category": "iac",
+      "file": "cloudformation/insecure-stack.yaml",
+      "line": 20,
+      "severity": "critical",
+      "refs": [
+        "public-ingress-admin-port"
+      ],
+      "description": "Security group allows SSH from 0.0.0.0/0",
+      "code": "CidrIp: 0.0.0.0/0"
+    },
+    {
+      "id": "IAC-142",
+      "category": "iac",
+      "file": "cloudformation/insecure-stack.yaml",
+      "line": 31,
+      "severity": "critical",
+      "refs": [
+        "public-database"
+      ],
+      "description": "RDS PubliclyAccessible true",
+      "code": "PubliclyAccessible: true"
+    },
+    {
+      "id": "IAC-143",
+      "category": "iac",
+      "file": "cloudformation/insecure-stack.yaml",
+      "line": 33,
+      "severity": "high",
+      "refs": [
+        "encryption-at-rest"
+      ],
+      "description": "RDS StorageEncrypted false",
+      "code": "StorageEncrypted: false"
+    },
+    {
+      "id": "IAC-144",
+      "category": "iac",
+      "file": "cloudformation/insecure-stack.yaml",
+      "line": 42,
+      "severity": "critical",
+      "refs": [
+        "iam-wildcard"
+      ],
+      "description": "IAM managed policy allows Action \"*\" on Resource \"*\"",
+      "code": "Action: \"*\""
+    },
+    {
+      "id": "IAC-145",
+      "category": "iac",
+      "file": "cloudformation/insecure-stack.yaml",
+      "line": 51,
+      "severity": "medium",
+      "refs": [
+        "audit-logging"
+      ],
+      "description": "CloudTrail log file validation disabled",
+      "code": "EnableLogFileValidation: false"
+    },
+    {
+      "id": "IAC-150",
+      "category": "iac",
+      "file": "docker/Dockerfile.insecure",
+      "line": 11,
+      "severity": "medium",
+      "refs": [
+        "add-remote-url"
+      ],
+      "description": "ADD fetches a remote URL (use COPY + verified download)",
+      "code": "ADD https://example.com/tools/installer.tar.gz /opt/installer.tar.gz"
+    },
+    {
+      "id": "IAC-151",
+      "category": "iac",
+      "file": "docker/Dockerfile.insecure",
+      "line": 14,
+      "severity": "high",
+      "refs": [
+        "curl-pipe-shell"
+      ],
+      "description": "Remote script piped to shell",
+      "code": "RUN curl -fsSL https://example.com/install.sh | sh"
+    },
+    {
+      "id": "IAC-152",
+      "category": "iac",
+      "file": "docker/Dockerfile.insecure",
+      "line": 17,
+      "severity": "low",
+      "refs": [
+        "apt-no-install-recommends"
+      ],
+      "description": "apt-get install without --no-install-recommends and cache cleanup",
+      "code": "RUN apt-get update && apt-get install -y openssh-server sudo"
+    },
+    {
+      "id": "IAC-153",
+      "category": "iac",
+      "file": "docker/Dockerfile.insecure",
+      "line": 22,
+      "severity": "high",
+      "refs": [
+        "world-writable"
+      ],
+      "description": "chmod 777 on application directory",
+      "code": "RUN chmod -R 777 /app"
+    },
+    {
+      "id": "IAC-154",
+      "category": "iac",
+      "file": "docker/Dockerfile.insecure",
+      "line": 25,
+      "severity": "medium",
+      "refs": [
+        "exposed-ssh"
+      ],
+      "description": "SSH port exposed",
+      "code": "EXPOSE 22 5000"
+    },
+    {
+      "id": "IAC-155",
+      "category": "iac",
+      "file": "docker/Dockerfile.insecure",
+      "line": 28,
+      "severity": "high",
+      "refs": [
+        "run-as-root"
+      ],
+      "description": "Container explicitly runs as root (and no HEALTHCHECK defined)",
+      "code": "USER root"
+    },
+    {
+      "id": "IAC-160",
+      "category": "iac",
+      "file": "docker/docker-compose.insecure.yml",
+      "line": 8,
+      "severity": "critical",
+      "refs": [
+        "privileged-container"
+      ],
+      "description": "Compose service runs privileged",
+      "code": "privileged: true"
+    },
+    {
+      "id": "IAC-161",
+      "category": "iac",
+      "file": "docker/docker-compose.insecure.yml",
+      "line": 10,
+      "severity": "high",
+      "refs": [
+        "host-namespace"
+      ],
+      "description": "Compose service uses host network",
+      "code": "network_mode: host"
+    },
+    {
+      "id": "IAC-162",
+      "category": "iac",
+      "file": "docker/docker-compose.insecure.yml",
+      "line": 12,
+      "severity": "high",
+      "refs": [
+        "host-namespace"
+      ],
+      "description": "Compose service shares host PID namespace",
+      "code": "pid: host"
+    },
+    {
+      "id": "IAC-163",
+      "category": "iac",
+      "file": "docker/docker-compose.insecure.yml",
+      "line": 15,
+      "severity": "critical",
+      "refs": [
+        "hostpath-mount"
+      ],
+      "description": "Docker socket mounted into container",
+      "code": "- /var/run/docker.sock:/var/run/docker.sock"
+    },
+    {
+      "id": "IAC-164",
+      "category": "iac",
+      "file": "docker/docker-compose.insecure.yml",
+      "line": 24,
+      "severity": "medium",
+      "refs": [
+        "exposed-database"
+      ],
+      "description": "Database port published on all host interfaces",
+      "code": "- \"5432:5432\""
+    },
+    {
+      "id": "IAC-170",
+      "category": "iac",
+      "file": "ci-fixtures/github-actions-insecure.yml",
+      "line": 7,
+      "severity": "critical",
+      "refs": [
+        "pull-request-target"
+      ],
+      "description": "pull_request_target combined with checkout of untrusted PR head",
+      "code": "pull_request_target:"
+    },
+    {
+      "id": "IAC-171",
+      "category": "iac",
+      "file": "ci-fixtures/github-actions-insecure.yml",
+      "line": 12,
+      "severity": "high",
+      "refs": [
+        "excessive-permissions"
+      ],
+      "description": "Workflow token granted write-all",
+      "code": "permissions: write-all"
+    },
+    {
+      "id": "IAC-172",
+      "category": "iac",
+      "file": "ci-fixtures/github-actions-insecure.yml",
+      "line": 19,
+      "severity": "medium",
+      "refs": [
+        "unpinned-action"
+      ],
+      "description": "Third-party action referenced by mutable branch instead of commit SHA",
+      "code": "- uses: actions/checkout@master"
+    },
+    {
+      "id": "IAC-173",
+      "category": "iac",
+      "file": "ci-fixtures/github-actions-insecure.yml",
+      "line": 24,
+      "severity": "critical",
+      "refs": [
+        "script-injection"
+      ],
+      "description": "Untrusted issue title interpolated into run script",
+      "code": "run: 'echo \"New issue: ${{ github.event.issue.title }}\"'"
+    },
+    {
+      "id": "IAC-174",
+      "category": "iac",
+      "file": "ci-fixtures/github-actions-insecure.yml",
+      "line": 27,
+      "severity": "high",
+      "refs": [
+        "curl-pipe-shell"
+      ],
+      "description": "Remote script piped to bash in CI",
+      "code": "run: curl -sSL https://example.com/setup.sh | bash"
+    },
+    {
+      "id": "SAST-001",
+      "category": "sast",
+      "file": "src/app.py",
+      "line": 4,
+      "severity": "medium",
+      "refs": [
+        "CWE-798"
+      ],
+      "description": "Hard-coded password compared in authentication logic",
+      "code": "return username == \"admin\" and password == \"password123\""
+    },
+    {
+      "id": "SAST-002",
+      "category": "sast",
+      "file": "src/vulnerable.py",
+      "line": 4,
+      "severity": "medium",
+      "refs": [
+        "CWE-89"
+      ],
+      "description": "SQL statement built by string concatenation",
+      "code": "return \"SELECT * FROM users WHERE name = '\" + user_input + \"'\""
+    },
+    {
+      "id": "SAST-010",
+      "category": "sast",
+      "file": "src/sast/injection.py",
+      "line": 14,
+      "severity": "high",
+      "refs": [
+        "CWE-89"
+      ],
+      "description": "SQL injection: concatenated string passed to cursor.execute",
+      "code": "cursor.execute(\"SELECT * FROM users WHERE name = '\" + username + \"'\")"
+    },
+    {
+      "id": "SAST-011",
+      "category": "sast",
+      "file": "src/sast/injection.py",
+      "line": 20,
+      "severity": "high",
+      "refs": [
+        "CWE-89"
+      ],
+      "description": "SQL injection: f-string query passed to execute",
+      "code": "return conn.execute(f\"SELECT * FROM orders WHERE user_id = {user_id}\").fetchall()"
+    },
+    {
+      "id": "SAST-012",
+      "category": "sast",
+      "file": "src/sast/injection.py",
+      "line": 26,
+      "severity": "high",
+      "refs": [
+        "CWE-89"
+      ],
+      "description": "SQL injection: %-formatted query flows through a variable into execute",
+      "code": "return conn.execute(query).fetchone()"
+    },
+    {
+      "id": "SAST-013",
+      "category": "sast",
+      "file": "src/sast/injection.py",
+      "line": 31,
+      "severity": "high",
+      "refs": [
+        "CWE-89"
+      ],
+      "description": "SQL injection: str.format inside sqlalchemy text()",
+      "code": "return session.execute(text(\"SELECT * FROM users WHERE name = '{}'\".format(name)))"
+    },
+    {
+      "id": "SAST-014",
+      "category": "sast",
+      "file": "src/sast/injection.py",
+      "line": 36,
+      "severity": "critical",
+      "refs": [
+        "CWE-78"
+      ],
+      "description": "OS command injection: os.system with concatenated input",
+      "code": "os.system(\"ping -c 1 \" + host)"
+    },
+    {
+      "id": "SAST-015",
+      "category": "sast",
+      "file": "src/sast/injection.py",
+      "line": 41,
+      "severity": "critical",
+      "refs": [
+        "CWE-78"
+      ],
+      "description": "OS command injection: subprocess with shell=True and dynamic string",
+      "code": "subprocess.call(\"tar czf /var/backups/app.tgz \" + path, shell=True)"
+    },
+    {
+      "id": "SAST-016",
+      "category": "sast",
+      "file": "src/sast/injection.py",
+      "line": 46,
+      "severity": "high",
+      "refs": [
+        "CWE-78"
+      ],
+      "description": "OS command injection: os.popen with formatted input",
+      "code": "return os.popen(\"nslookup %s\" % domain).read()"
+    },
+    {
+      "id": "SAST-017",
+      "category": "sast",
+      "file": "src/sast/injection.py",
+      "line": 51,
+      "severity": "critical",
+      "refs": [
+        "CWE-95"
+      ],
+      "description": "Code injection: eval on caller-supplied expression",
+      "code": "return eval(expression)"
+    },
+    {
+      "id": "SAST-018",
+      "category": "sast",
+      "file": "src/sast/injection.py",
+      "line": 56,
+      "severity": "critical",
+      "refs": [
+        "CWE-94"
+      ],
+      "description": "Code injection: exec on caller-supplied source",
+      "code": "exec(source)"
+    },
+    {
+      "id": "SAST-019",
+      "category": "sast",
+      "file": "src/sast/injection.py",
+      "line": 61,
+      "severity": "high",
+      "refs": [
+        "CWE-1336"
+      ],
+      "description": "Server-side template injection: input concatenated into Jinja2 template source",
+      "code": "return Template(\"Hello \" + name + \"!\").render()"
+    },
+    {
+      "id": "SAST-020",
+      "category": "sast",
+      "file": "src/sast/injection.py",
+      "line": 66,
+      "severity": "high",
+      "refs": [
+        "CWE-90"
+      ],
+      "description": "LDAP injection: unescaped input in search filter",
+      "code": "return conn.search_s(\"ou=people,dc=example,dc=com\", ldap.SCOPE_SUBTREE, \"(uid=\" + username + \")\")"
+    },
+    {
+      "id": "SAST-021",
+      "category": "sast",
+      "file": "src/sast/injection.py",
+      "line": 71,
+      "severity": "high",
+      "refs": [
+        "CWE-643"
+      ],
+      "description": "XPath injection: concatenated input in xpath expression",
+      "code": "return tree.xpath(\"//user[name/text()='\" + username + \"']\")"
+    },
+    {
+      "id": "SAST-030",
+      "category": "sast",
+      "file": "src/sast/deserialization.py",
+      "line": 13,
+      "severity": "critical",
+      "refs": [
+        "CWE-502"
+      ],
+      "description": "pickle.loads on untrusted bytes",
+      "code": "return pickle.loads(blob)"
+    },
+    {
+      "id": "SAST-031",
+      "category": "sast",
+      "file": "src/sast/deserialization.py",
+      "line": 18,
+      "severity": "critical",
+      "refs": [
+        "CWE-502"
+      ],
+      "description": "yaml.load without a safe Loader",
+      "code": "return yaml.load(stream)"
+    },
+    {
+      "id": "SAST-032",
+      "category": "sast",
+      "file": "src/sast/deserialization.py",
+      "line": 23,
+      "severity": "critical",
+      "refs": [
+        "CWE-502"
+      ],
+      "description": "yaml.load with explicit unsafe yaml.Loader",
+      "code": "return yaml.load(stream, Loader=yaml.Loader)"
+    },
+    {
+      "id": "SAST-033",
+      "category": "sast",
+      "file": "src/sast/deserialization.py",
+      "line": 28,
+      "severity": "high",
+      "refs": [
+        "CWE-502"
+      ],
+      "description": "marshal.loads on untrusted bytes",
+      "code": "return marshal.loads(blob)"
+    },
+    {
+      "id": "SAST-034",
+      "category": "sast",
+      "file": "src/sast/deserialization.py",
+      "line": 33,
+      "severity": "medium",
+      "refs": [
+        "CWE-502"
+      ],
+      "description": "shelve.open (pickle-backed) on caller-controlled path",
+      "code": "return shelve.open(path)"
+    },
+    {
+      "id": "SAST-035",
+      "category": "sast",
+      "file": "src/sast/deserialization.py",
+      "line": 38,
+      "severity": "critical",
+      "refs": [
+        "CWE-502"
+      ],
+      "description": "jsonpickle.decode on untrusted input",
+      "code": "return jsonpickle.decode(payload)"
+    },
+    {
+      "id": "SAST-036",
+      "category": "sast",
+      "file": "src/sast/deserialization.py",
+      "line": 43,
+      "severity": "high",
+      "refs": [
+        "CWE-502"
+      ],
+      "description": "numpy.load with allow_pickle=True",
+      "code": "return numpy.load(path, allow_pickle=True)"
+    },
+    {
+      "id": "SAST-040",
+      "category": "sast",
+      "file": "src/sast/crypto_weak.py",
+      "line": 15,
+      "severity": "high",
+      "refs": [
+        "CWE-328"
+      ],
+      "description": "MD5 used to hash passwords",
+      "code": "return hashlib.md5(password.encode()).hexdigest()"
+    },
+    {
+      "id": "SAST-041",
+      "category": "sast",
+      "file": "src/sast/crypto_weak.py",
+      "line": 20,
+      "severity": "medium",
+      "refs": [
+        "CWE-328"
+      ],
+      "description": "SHA-1 used to hash passwords",
+      "code": "return hashlib.sha1(password.encode()).hexdigest()"
+    },
+    {
+      "id": "SAST-042",
+      "category": "sast",
+      "file": "src/sast/crypto_weak.py",
+      "line": 25,
+      "severity": "high",
+      "refs": [
+        "CWE-327"
+      ],
+      "description": "Broken cipher: DES",
+      "code": "return DES.new(key, DES.MODE_ECB).encrypt(data)"
+    },
+    {
+      "id": "SAST-043",
+      "category": "sast",
+      "file": "src/sast/crypto_weak.py",
+      "line": 30,
+      "severity": "medium",
+      "refs": [
+        "CWE-327"
+      ],
+      "description": "Insecure block mode: AES-ECB",
+      "code": "return AES.new(key, AES.MODE_ECB).encrypt(data)"
+    },
+    {
+      "id": "SAST-044",
+      "category": "sast",
+      "file": "src/sast/crypto_weak.py",
+      "line": 35,
+      "severity": "medium",
+      "refs": [
+        "CWE-329"
+      ],
+      "description": "Static, predictable IV for AES-CBC",
+      "code": "return AES.new(key, AES.MODE_CBC, iv=b\"0000000000000000\").encrypt(data)"
+    },
+    {
+      "id": "SAST-045",
+      "category": "sast",
+      "file": "src/sast/crypto_weak.py",
+      "line": 40,
+      "severity": "medium",
+      "refs": [
+        "CWE-338"
+      ],
+      "description": "Non-cryptographic PRNG used for security token",
+      "code": "return str(random.randint(100000, 999999))"
+    },
+    {
+      "id": "SAST-046",
+      "category": "sast",
+      "file": "src/sast/crypto_weak.py",
+      "line": 45,
+      "severity": "high",
+      "refs": [
+        "CWE-326"
+      ],
+      "description": "RSA key size below 2048 bits",
+      "code": "return rsa.generate_private_key(public_exponent=65537, key_size=1024)"
+    },
+    {
+      "id": "SAST-047",
+      "category": "sast",
+      "file": "src/sast/crypto_weak.py",
+      "line": 50,
+      "severity": "high",
+      "refs": [
+        "CWE-295"
+      ],
+      "description": "TLS certificate verification disabled (verify=False)",
+      "code": "return requests.get(url, verify=False, timeout=10).text"
+    },
+    {
+      "id": "SAST-048",
+      "category": "sast",
+      "file": "src/sast/crypto_weak.py",
+      "line": 55,
+      "severity": "high",
+      "refs": [
+        "CWE-295"
+      ],
+      "description": "ssl._create_unverified_context disables certificate validation",
+      "code": "return ssl._create_unverified_context()"
+    },
+    {
+      "id": "SAST-049",
+      "category": "sast",
+      "file": "src/sast/crypto_weak.py",
+      "line": 60,
+      "severity": "high",
+      "refs": [
+        "CWE-327"
+      ],
+      "description": "Deprecated protocol TLSv1",
+      "code": "return ssl.SSLContext(ssl.PROTOCOL_TLSv1)"
+    },
+    {
+      "id": "SAST-050",
+      "category": "sast",
+      "file": "src/sast/crypto_weak.py",
+      "line": 66,
+      "severity": "high",
+      "refs": [
+        "CWE-295"
+      ],
+      "description": "Paramiko AutoAddPolicy accepts unknown host keys",
+      "code": "client.set_missing_host_key_policy(paramiko.AutoAddPolicy())"
+    },
+    {
+      "id": "SAST-051",
+      "category": "sast",
+      "file": "src/sast/crypto_weak.py",
+      "line": 73,
+      "severity": "critical",
+      "refs": [
+        "CWE-347"
+      ],
+      "description": "JWT decoded without signature verification",
+      "code": "return jwt.decode(token, options={\"verify_signature\": False})"
+    },
+    {
+      "id": "SAST-060",
+      "category": "sast",
+      "file": "src/sast/web_flask.py",
+      "line": 15,
+      "severity": "high",
+      "refs": [
+        "CWE-798"
+      ],
+      "description": "Hard-coded Flask SECRET_KEY",
+      "code": "app.config[\"SECRET_KEY\"] = \"flask-fixture-secret-key-do-not-use\""
+    },
+    {
+      "id": "SAST-061",
+      "category": "sast",
+      "file": "src/sast/web_flask.py",
+      "line": 17,
+      "severity": "medium",
+      "refs": [
+        "CWE-614"
+      ],
+      "description": "Session cookie sent without Secure flag",
+      "code": "app.config[\"SESSION_COOKIE_SECURE\"] = False"
+    },
+    {
+      "id": "SAST-062",
+      "category": "sast",
+      "file": "src/sast/web_flask.py",
+      "line": 19,
+      "severity": "medium",
+      "refs": [
+        "CWE-1004"
+      ],
+      "description": "Session cookie readable by JavaScript (HttpOnly disabled)",
+      "code": "app.config[\"SESSION_COOKIE_HTTPONLY\"] = False"
+    },
+    {
+      "id": "SAST-063",
+      "category": "sast",
+      "file": "src/sast/web_flask.py",
+      "line": 21,
+      "severity": "medium",
+      "refs": [
+        "CWE-352"
+      ],
+      "description": "CSRF protection globally disabled",
+      "code": "app.config[\"WTF_CSRF_ENABLED\"] = False"
+    },
+    {
+      "id": "SAST-064",
+      "category": "sast",
+      "file": "src/sast/web_flask.py",
+      "line": 29,
+      "severity": "critical",
+      "refs": [
+        "CWE-89"
+      ],
+      "description": "Tainted SQL injection: request.args -> execute",
+      "code": "rows = conn.execute(\"SELECT * FROM products WHERE name LIKE '%\" + term + \"%'\").fetchall()"
+    },
+    {
+      "id": "SAST-065",
+      "category": "sast",
+      "file": "src/sast/web_flask.py",
+      "line": 37,
+      "severity": "high",
+      "refs": [
+        "CWE-79"
+      ],
+      "description": "Reflected XSS: request.args concatenated into HTML response",
+      "code": "return make_response(\"<h1>Hello \" + name + \"</h1>\")"
+    },
+    {
+      "id": "SAST-066",
+      "category": "sast",
+      "file": "src/sast/web_flask.py",
+      "line": 44,
+      "severity": "critical",
+      "refs": [
+        "CWE-1336"
+      ],
+      "description": "Tainted SSTI: request.form -> render_template_string",
+      "code": "return render_template_string(template)"
+    },
+    {
+      "id": "SAST-067",
+      "category": "sast",
+      "file": "src/sast/web_flask.py",
+      "line": 51,
+      "severity": "high",
+      "refs": [
+        "CWE-22"
+      ],
+      "description": "Path traversal: request.args -> send_file",
+      "code": "return send_file(os.path.join(\"/srv/uploads\", filename))"
+    },
+    {
+      "id": "SAST-068",
+      "category": "sast",
+      "file": "src/sast/web_flask.py",
+      "line": 58,
+      "severity": "high",
+      "refs": [
+        "CWE-22"
+      ],
+      "description": "Path traversal: request.args -> open()",
+      "code": "with open(path) as handle:"
+    },
+    {
+      "id": "SAST-069",
+      "category": "sast",
+      "file": "src/sast/web_flask.py",
+      "line": 66,
+      "severity": "high",
+      "refs": [
+        "CWE-918"
+      ],
+      "description": "SSRF: request.args -> requests.get",
+      "code": "return requests.get(url, timeout=5).text"
+    },
+    {
+      "id": "SAST-070",
+      "category": "sast",
+      "file": "src/sast/web_flask.py",
+      "line": 72,
+      "severity": "medium",
+      "refs": [
+        "CWE-601"
+      ],
+      "description": "Open redirect: request.args -> redirect",
+      "code": "return redirect(request.args.get(\"next\"))"
+    },
+    {
+      "id": "SAST-071",
+      "category": "sast",
+      "file": "src/sast/web_flask.py",
+      "line": 79,
+      "severity": "critical",
+      "refs": [
+        "CWE-78"
+      ],
+      "description": "Tainted command injection: request.args -> subprocess shell=True",
+      "code": "return subprocess.check_output(command, shell=True)"
+    },
+    {
+      "id": "SAST-072",
+      "category": "sast",
+      "file": "src/sast/web_flask.py",
+      "line": 85,
+      "severity": "critical",
+      "refs": [
+        "CWE-502"
+      ],
+      "description": "Tainted deserialization: request body -> pickle.loads",
+      "code": "return str(pickle.loads(request.get_data()))"
+    },
+    {
+      "id": "SAST-073",
+      "category": "sast",
+      "file": "src/sast/web_flask.py",
+      "line": 92,
+      "severity": "high",
+      "refs": [
+        "CWE-22"
+      ],
+      "description": "Upload saved with client-controlled filename (no secure_filename)",
+      "code": "uploaded.save(os.path.join(\"/srv/uploads\", uploaded.filename))"
+    },
+    {
+      "id": "SAST-074",
+      "category": "sast",
+      "file": "src/sast/web_flask.py",
+      "line": 99,
+      "severity": "medium",
+      "refs": [
+        "CWE-532"
+      ],
+      "description": "Password written to application log",
+      "code": "app.logger.info(\"login user=%s password=%s\", request.form[\"user\"], request.form[\"password\"])"
+    },
+    {
+      "id": "SAST-075",
+      "category": "sast",
+      "file": "src/sast/web_flask.py",
+      "line": 109,
+      "severity": "high",
+      "refs": [
+        "CWE-89"
+      ],
+      "description": "Tainted SQL injection propagated through dict and helper function",
+      "code": "return {\"rows\": conn.execute(query).fetchall()}"
+    },
+    {
+      "id": "SAST-076",
+      "category": "sast",
+      "file": "src/sast/web_flask.py",
+      "line": 119,
+      "severity": "medium",
+      "refs": [
+        "CWE-942"
+      ],
+      "description": "Wildcard CORS origin combined with credentials",
+      "code": "response.headers[\"Access-Control-Allow-Origin\"] = \"*\""
+    },
+    {
+      "id": "SAST-077",
+      "category": "sast",
+      "file": "src/sast/web_flask.py",
+      "line": 127,
+      "severity": "high",
+      "refs": [
+        "CWE-489"
+      ],
+      "description": "Flask debug mode enabled (Werkzeug debugger RCE)",
+      "code": "app.run(host=\"0.0.0.0\", port=5000, debug=True)"
+    },
+    {
+      "id": "SAST-078",
+      "category": "sast",
+      "file": "src/sast/web_flask.py",
+      "line": 127,
+      "severity": "medium",
+      "refs": [
+        "CWE-605"
+      ],
+      "description": "Server bound to all interfaces (0.0.0.0)",
+      "code": "app.run(host=\"0.0.0.0\", port=5000, debug=True)"
+    },
+    {
+      "id": "SAST-080",
+      "category": "sast",
+      "file": "src/sast/django_app.py",
+      "line": 8,
+      "severity": "high",
+      "refs": [
+        "CWE-489"
+      ],
+      "description": "Django DEBUG enabled",
+      "code": "DEBUG = True"
+    },
+    {
+      "id": "SAST-081",
+      "category": "sast",
+      "file": "src/sast/django_app.py",
+      "line": 10,
+      "severity": "medium",
+      "refs": [
+        "CWE-183"
+      ],
+      "description": "ALLOWED_HOSTS wildcard",
+      "code": "ALLOWED_HOSTS = [\"*\"]"
+    },
+    {
+      "id": "SAST-082",
+      "category": "sast",
+      "file": "src/sast/django_app.py",
+      "line": 16,
+      "severity": "critical",
+      "refs": [
+        "CWE-89"
+      ],
+      "description": "Tainted SQL injection: request.GET -> QuerySet.raw f-string",
+      "code": "users = User.objects.raw(f\"SELECT * FROM auth_user WHERE username = '{name}'\")"
+    },
+    {
+      "id": "SAST-083",
+      "category": "sast",
+      "file": "src/sast/django_app.py",
+      "line": 23,
+      "severity": "high",
+      "refs": [
+        "CWE-89"
+      ],
+      "description": "Tainted SQL injection: request.GET -> QuerySet.extra(where=)",
+      "code": "return HttpResponse(str(list(User.objects.extra(where=[clause]))))"
+    },
+    {
+      "id": "SAST-084",
+      "category": "sast",
+      "file": "src/sast/django_app.py",
+      "line": 29,
+      "severity": "high",
+      "refs": [
+        "CWE-79"
+      ],
+      "description": "XSS: mark_safe on request data",
+      "code": "return HttpResponse(mark_safe(\"<p>\" + bio + \"</p>\"))"
+    },
+    {
+      "id": "SAST-085",
+      "category": "sast",
+      "file": "src/sast/django_app.py",
+      "line": 33,
+      "severity": "medium",
+      "refs": [
+        "CWE-352"
+      ],
+      "description": "CSRF protection disabled on state-changing view",
+      "code": "@csrf_exempt"
+    },
+    {
+      "id": "SAST-090",
+      "category": "sast",
+      "file": "src/sast/file_xml.py",
+      "line": 13,
+      "severity": "medium",
+      "refs": [
+        "CWE-377"
+      ],
+      "description": "tempfile.mktemp race condition",
+      "code": "return tempfile.mktemp()"
+    },
+    {
+      "id": "SAST-091",
+      "category": "sast",
+      "file": "src/sast/file_xml.py",
+      "line": 18,
+      "severity": "high",
+      "refs": [
+        "CWE-732"
+      ],
+      "description": "World-writable file permissions (0o777)",
+      "code": "os.chmod(path, 0o777)"
+    },
+    {
+      "id": "SAST-092",
+      "category": "sast",
+      "file": "src/sast/file_xml.py",
+      "line": 24,
+      "severity": "high",
+      "refs": [
+        "CWE-22"
+      ],
+      "description": "tarfile.extractall without member validation (tar-slip)",
+      "code": "archive.extractall(\"/srv/extracted\")"
+    },
+    {
+      "id": "SAST-093",
+      "category": "sast",
+      "file": "src/sast/file_xml.py",
+      "line": 29,
+      "severity": "medium",
+      "refs": [
+        "CWE-611"
+      ],
+      "description": "xml.etree parsing of untrusted XML",
+      "code": "return ET.fromstring(xml_text)"
+    },
+    {
+      "id": "SAST-094",
+      "category": "sast",
+      "file": "src/sast/file_xml.py",
+      "line": 34,
+      "severity": "high",
+      "refs": [
+        "CWE-611"
+      ],
+      "description": "XXE: lxml parser with entity resolution and network access enabled",
+      "code": "parser = etree.XMLParser(resolve_entities=True, no_network=False)"
+    },
+    {
+      "id": "SAST-095",
+      "category": "sast",
+      "file": "src/sast/file_xml.py",
+      "line": 40,
+      "severity": "medium",
+      "refs": [
+        "CWE-611"
+      ],
+      "description": "xml.dom.minidom parsing of untrusted XML",
+      "code": "return xml.dom.minidom.parseString(xml_text)"
+    },
+    {
+      "id": "SAST-096",
+      "category": "sast",
+      "file": "src/sast/file_xml.py",
+      "line": 45,
+      "severity": "low",
+      "refs": [
+        "CWE-377"
+      ],
+      "description": "Hard-coded shared temp directory",
+      "code": "return \"/tmp/tigergate-cache.json\""
+    },
+    {
+      "id": "SAST-100",
+      "category": "sast",
+      "file": "src/sast/misc.py",
+      "line": 13,
+      "severity": "low",
+      "refs": [
+        "CWE-617"
+      ],
+      "description": "assert used for authorization (stripped with python -O)",
+      "code": "assert user.is_admin, \"admin required\""
+    },
+    {
+      "id": "SAST-101",
+      "category": "sast",
+      "file": "src/sast/misc.py",
+      "line": 21,
+      "severity": "low",
+      "refs": [
+        "CWE-703"
+      ],
+      "description": "Exception silently swallowed (except/pass)",
+      "code": "except Exception:"
+    },
+    {
+      "id": "SAST-102",
+      "category": "sast",
+      "file": "src/sast/misc.py",
+      "line": 26,
+      "severity": "medium",
+      "refs": [
+        "CWE-259"
+      ],
+      "description": "Hard-coded password as default argument",
+      "code": "def connect_db(host: str, user: str = \"root\", password: str = \"r00t-fixture-pass\"):"
+    },
+    {
+      "id": "SAST-103",
+      "category": "sast",
+      "file": "src/sast/misc.py",
+      "line": 32,
+      "severity": "low",
+      "refs": [
+        "CWE-400"
+      ],
+      "description": "HTTP request without timeout",
+      "code": "return requests.get(url).content"
+    },
+    {
+      "id": "SAST-104",
+      "category": "sast",
+      "file": "src/sast/misc.py",
+      "line": 38,
+      "severity": "medium",
+      "refs": [
+        "CWE-605"
+      ],
+      "description": "Socket bound to all interfaces",
+      "code": "sock.bind((\"0.0.0.0\", 9000))"
+    },
+    {
+      "id": "SAST-105",
+      "category": "sast",
+      "file": "src/sast/misc.py",
+      "line": 44,
+      "severity": "medium",
+      "refs": [
+        "CWE-319"
+      ],
+      "description": "Cleartext FTP protocol",
+      "code": "ftplib.FTP(host).login(\"anonymous\", \"\")"
+    },
+    {
+      "id": "SAST-106",
+      "category": "sast",
+      "file": "src/sast/misc.py",
+      "line": 49,
+      "severity": "high",
+      "refs": [
+        "CWE-319"
+      ],
+      "description": "Cleartext Telnet protocol",
+      "code": "telnetlib.Telnet(host)"
+    },
+    {
+      "id": "SAST-107",
+      "category": "sast",
+      "file": "src/sast/misc.py",
+      "line": 54,
+      "severity": "medium",
+      "refs": [
+        "CWE-1333"
+      ],
+      "description": "Regex compiled from caller-supplied pattern (ReDoS)",
+      "code": "return re.compile(pattern).findall(text)"
+    },
+    {
+      "id": "SAST-108",
+      "category": "sast",
+      "file": "src/sast/misc.py",
+      "line": 59,
+      "severity": "medium",
+      "refs": [
+        "CWE-1333"
+      ],
+      "description": "Catastrophic backtracking regex (a+)+",
+      "code": "return re.match(r\"^(a+)+$\", label) is not None"
+    },
+    {
+      "id": "SAST-109",
+      "category": "sast",
+      "file": "src/sast/misc.py",
+      "line": 64,
+      "severity": "medium",
+      "refs": [
+        "CWE-208"
+      ],
+      "description": "Non-constant-time comparison of secret signature",
+      "code": "return signature == expected"
+    },
+    {
+      "id": "SAST-110",
+      "category": "sast",
+      "file": "src/sast/misc.py",
+      "line": 69,
+      "severity": "high",
+      "refs": [
+        "CWE-470"
+      ],
+      "description": "Unsafe reflection: import of caller-controlled module name",
+      "code": "return importlib.import_module(module_name)"
+    },
+    {
+      "id": "SAST-111",
+      "category": "sast",
+      "file": "src/sast/misc.py",
+      "line": 74,
+      "severity": "medium",
+      "refs": [
+        "CWE-319"
+      ],
+      "description": "Credentials sent over plaintext HTTP",
+      "code": "requests.post(\"http://auth.example.com/login\", data={\"user\": user, \"password\": password}, timeout=5)"
+    },
+    {
+      "id": "SAST-120",
+      "category": "sast",
+      "file": "src/sast/crossfile/services.py",
+      "line": 8,
+      "severity": "critical",
+      "refs": [
+        "CWE-78"
+      ],
+      "description": "Cross-file taint: request.args (routes.py) -> os.system",
+      "code": "os.system(\"systemctl restart \" + name)"
+    },
+    {
+      "id": "SAST-121",
+      "category": "sast",
+      "file": "src/sast/crossfile/services.py",
+      "line": 15,
+      "severity": "high",
+      "refs": [
+        "CWE-89"
+      ],
+      "description": "Cross-file taint: request.args (routes.py) -> execute",
+      "code": "return {\"rows\": conn.execute(\"SELECT * FROM \" + table).fetchall()}"
+    },
+    {
+      "id": "SCA-001",
+      "category": "sca",
+      "file": "requirements.txt",
+      "line": 6,
+      "severity": "high",
+      "refs": [
+        "CVE-2018-18074",
+        "CVE-2023-32681",
+        "CVE-2024-35195",
+        "CVE-2024-47081"
+      ],
+      "description": "requests 2.19.1 credential leak on redirect / cert verification bypass",
+      "code": "requests==2.19.1",
+      "package": {
+        "name": "requests",
+        "version": "2.19.1"
+      }
+    },
+    {
+      "id": "SCA-002",
+      "category": "sca",
+      "file": "requirements.txt",
+      "line": 8,
+      "severity": "medium",
+      "refs": [
+        "CVE-2025-71176"
+      ],
+      "description": "pytest 5.4.3 (also pulls in py<1.11, CVE-2022-42969 disputed, reported against \"py\")",
+      "code": "pytest==5.4.3",
+      "package": {
+        "name": "pytest",
+        "version": "5.4.3"
+      }
+    },
+    {
+      "id": "SCA-003",
+      "category": "sca",
+      "file": "requirements.txt",
+      "line": 10,
+      "severity": "critical",
+      "refs": [
+        "CVE-2019-14234",
+        "CVE-2020-7471",
+        "CVE-2022-28346",
+        "CVE-2019-12308"
+      ],
+      "description": "Django 2.2.0 SQL injection + XSS (also EOL)",
+      "code": "Django==2.2.0",
+      "package": {
+        "name": "Django",
+        "version": "2.2.0"
+      }
+    },
+    {
+      "id": "SCA-004",
+      "category": "sca",
+      "file": "requirements.txt",
+      "line": 12,
+      "severity": "high",
+      "refs": [
+        "CVE-2018-1000656",
+        "CVE-2019-1010083",
+        "CVE-2023-30861"
+      ],
+      "description": "Flask 0.12.2 DoS and session cookie disclosure",
+      "code": "Flask==0.12.2",
+      "package": {
+        "name": "Flask",
+        "version": "0.12.2"
+      }
+    },
+    {
+      "id": "SCA-005",
+      "category": "sca",
+      "file": "requirements.txt",
+      "line": 14,
+      "severity": "high",
+      "refs": [
+        "CVE-2019-10906",
+        "CVE-2020-28493",
+        "CVE-2024-22195"
+      ],
+      "description": "Jinja2 2.10 sandbox escape / ReDoS / XSS",
+      "code": "Jinja2==2.10",
+      "package": {
+        "name": "Jinja2",
+        "version": "2.10"
+      }
+    },
+    {
+      "id": "SCA-006",
+      "category": "sca",
+      "file": "requirements.txt",
+      "line": 16,
+      "severity": "critical",
+      "refs": [
+        "CVE-2020-1747",
+        "CVE-2020-14343"
+      ],
+      "description": "PyYAML 5.3 arbitrary code execution via full_load",
+      "code": "PyYAML==5.3",
+      "package": {
+        "name": "PyYAML",
+        "version": "5.3"
+      }
+    },
+    {
+      "id": "SCA-007",
+      "category": "sca",
+      "file": "requirements.txt",
+      "line": 18,
+      "severity": "high",
+      "refs": [
+        "CVE-2019-11324",
+        "CVE-2019-11236",
+        "CVE-2020-26137",
+        "CVE-2023-43804"
+      ],
+      "description": "urllib3 1.23 CRLF injection / cert handling / cookie leak",
+      "code": "urllib3==1.23",
+      "package": {
+        "name": "urllib3",
+        "version": "1.23"
+      }
+    },
+    {
+      "id": "SCA-008",
+      "category": "sca",
+      "file": "requirements.txt",
+      "line": 20,
+      "severity": "critical",
+      "refs": [
+        "CVE-2019-14806",
+        "CVE-2023-25577",
+        "CVE-2024-34069"
+      ],
+      "description": "Werkzeug 0.14.1 debugger PIN weakness / multipart DoS / debugger RCE",
+      "code": "Werkzeug==0.14.1",
+      "package": {
+        "name": "Werkzeug",
+        "version": "0.14.1"
+      }
+    },
+    {
+      "id": "SCA-009",
+      "category": "sca",
+      "file": "requirements.txt",
+      "line": 22,
+      "severity": "critical",
+      "refs": [
+        "CVE-2020-5311",
+        "CVE-2020-5312",
+        "CVE-2020-5313",
+        "CVE-2021-25289",
+        "CVE-2022-22817"
+      ],
+      "description": "Pillow 6.2.0 buffer overflows and ImageMath.eval code execution",
+      "code": "Pillow==6.2.0",
+      "package": {
+        "name": "Pillow",
+        "version": "6.2.0"
+      }
+    },
+    {
+      "id": "SCA-010",
+      "category": "sca",
+      "file": "requirements.txt",
+      "line": 24,
+      "severity": "high",
+      "refs": [
+        "CVE-2018-10903",
+        "CVE-2020-25659",
+        "CVE-2023-0286",
+        "CVE-2023-50782"
+      ],
+      "description": "cryptography 2.2 GCM tag truncation / Bleichenbacher timing / bundled OpenSSL",
+      "code": "cryptography==2.2",
+      "package": {
+        "name": "cryptography",
+        "version": "2.2"
+      }
+    },
+    {
+      "id": "SCA-011",
+      "category": "sca",
+      "file": "requirements.txt",
+      "line": 26,
+      "severity": "high",
+      "refs": [
+        "CVE-2021-28957",
+        "CVE-2021-43818",
+        "CVE-2022-2309"
+      ],
+      "description": "lxml 4.6.2 XSS in clean module / NULL deref",
+      "code": "lxml==4.6.2",
+      "package": {
+        "name": "lxml",
+        "version": "4.6.2"
+      }
+    },
+    {
+      "id": "SCA-012",
+      "category": "sca",
+      "file": "requirements.txt",
+      "line": 28,
+      "severity": "critical",
+      "refs": [
+        "CVE-2018-1000805",
+        "CVE-2022-24302",
+        "CVE-2023-48795"
+      ],
+      "description": "paramiko 2.4.1 auth bypass / race condition / Terrapin",
+      "code": "paramiko==2.4.1",
+      "package": {
+        "name": "paramiko",
+        "version": "2.4.1"
+      }
+    },
+    {
+      "id": "SCA-013",
+      "category": "sca",
+      "file": "requirements.txt",
+      "line": 30,
+      "severity": "high",
+      "refs": [
+        "CVE-2019-7164",
+        "CVE-2019-7548"
+      ],
+      "description": "SQLAlchemy 1.2.17 SQL injection via order_by / group_by",
+      "code": "SQLAlchemy==1.2.17",
+      "package": {
+        "name": "SQLAlchemy",
+        "version": "1.2.17"
+      }
+    },
+    {
+      "id": "SCA-014",
+      "category": "sca",
+      "file": "requirements.txt",
+      "line": 32,
+      "severity": "critical",
+      "refs": [
+        "CVE-2019-6446"
+      ],
+      "description": "numpy 1.16.0 arbitrary code execution via pickle in numpy.load",
+      "code": "numpy==1.16.0",
+      "package": {
+        "name": "numpy",
+        "version": "1.16.0"
+      }
+    },
+    {
+      "id": "SCA-020",
+      "category": "sca",
+      "file": "requirements-dev.txt",
+      "line": 4,
+      "severity": "medium",
+      "refs": [
+        "CVE-2021-27291",
+        "CVE-2021-20270"
+      ],
+      "description": "Pygments 2.5.2 ReDoS / infinite loop",
+      "code": "Pygments==2.5.2",
+      "package": {
+        "name": "Pygments",
+        "version": "2.5.2"
+      }
+    },
+    {
+      "id": "SCA-021",
+      "category": "sca",
+      "file": "requirements-dev.txt",
+      "line": 6,
+      "severity": "medium",
+      "refs": [
+        "CVE-2020-6802",
+        "CVE-2020-6816",
+        "CVE-2021-23980"
+      ],
+      "description": "bleach 3.1.0 mutation XSS",
+      "code": "bleach==3.1.0",
+      "package": {
+        "name": "bleach",
+        "version": "3.1.0"
+      }
+    },
+    {
+      "id": "SCA-022",
+      "category": "sca",
+      "file": "requirements-dev.txt",
+      "line": 8,
+      "severity": "high",
+      "refs": [
+        "CVE-2022-40897",
+        "CVE-2024-6345"
+      ],
+      "description": "setuptools 39.0.1 ReDoS / remote code execution via package_index",
+      "code": "setuptools==39.0.1",
+      "package": {
+        "name": "setuptools",
+        "version": "39.0.1"
+      }
+    },
+    {
+      "id": "SCA-030",
+      "category": "sca",
+      "file": "pyproject.toml",
+      "line": 13,
+      "severity": "high",
+      "refs": [
+        "CVE-2023-37276",
+        "CVE-2024-23334"
+      ],
+      "description": "aiohttp 3.8.0 request smuggling / static route path traversal",
+      "code": "\"aiohttp==3.8.0\",",
+      "package": {
+        "name": "aiohttp",
+        "version": "3.8.0"
+      }
+    },
+    {
+      "id": "SCA-031",
+      "category": "sca",
+      "file": "pyproject.toml",
+      "line": 15,
+      "severity": "medium",
+      "refs": [
+        "CVE-2023-28370",
+        "CVE-2024-52804"
+      ],
+      "description": "tornado 5.1 open redirect / cookie parsing DoS",
+      "code": "\"tornado==5.1\",",
+      "package": {
+        "name": "tornado",
+        "version": "5.1"
+      }
+    },
+    {
+      "id": "SCA-032",
+      "category": "sca",
+      "file": "pyproject.toml",
+      "line": 17,
+      "severity": "high",
+      "refs": [
+        "CVE-2022-40023"
+      ],
+      "description": "Mako 1.0.7 ReDoS in lexer",
+      "code": "\"Mako==1.0.7\",",
+      "package": {
+        "name": "Mako",
+        "version": "1.0.7"
+      }
+    },
+    {
+      "id": "SCA-033",
+      "category": "sca",
+      "file": "pyproject.toml",
+      "line": 19,
+      "severity": "high",
+      "refs": [
+        "CVE-2017-11424",
+        "CVE-2022-29217"
+      ],
+      "description": "PyJWT 1.5.0 algorithm confusion",
+      "code": "\"PyJWT==1.5.0\",",
+      "package": {
+        "name": "PyJWT",
+        "version": "1.5.0"
+      }
+    },
+    {
+      "id": "SCA-040",
+      "category": "sca",
+      "file": "terraform/versions.tf",
+      "line": 7,
+      "severity": "medium",
+      "refs": [
+        "provider-outdated"
+      ],
+      "description": "Terraform AWS provider pinned to 3.0.0 (outdated)",
+      "code": "version = \"3.0.0\""
+    },
+    {
+      "id": "SCA-041",
+      "category": "sca",
+      "file": "terraform/azure/main.tf",
+      "line": 7,
+      "severity": "medium",
+      "refs": [
+        "provider-outdated"
+      ],
+      "description": "Terraform azurerm provider pinned to 2.0.0 (outdated)",
+      "code": "version = \"2.0.0\""
+    },
+    {
+      "id": "SECRET-001",
+      "category": "secrets",
+      "file": "src/secrets.py",
+      "line": 3,
+      "severity": "low",
+      "refs": [
+        "generic-api-key"
+      ],
+      "description": "Low-entropy generic API key assignment",
+      "code": "API_KEY = \"test-fixture-not-a-real-secret\""
+    },
+    {
+      "id": "SECRET-010",
+      "category": "secrets",
+      "file": "src/config/settings.py",
+      "line": 8,
+      "severity": "critical",
+      "refs": [
+        "aws-access-key-id"
+      ],
+      "description": "AWS access key ID",
+      "code": "AWS_ACCESS_KEY_ID = \"AKIAGNGVBZSI4KCDHJMQ\""
+    },
+    {
+      "id": "SECRET-011",
+      "category": "secrets",
+      "file": "src/config/settings.py",
+      "line": 10,
+      "severity": "critical",
+      "refs": [
+        "aws-secret-access-key"
+      ],
+      "description": "AWS secret access key",
+      "code": "AWS_SECRET_ACCESS_KEY = \"bJ/6v+p2MAOGrMoN7tMsubQptQAiEvtyM/V0JdMY\""
+    },
+    {
+      "id": "SECRET-012",
+      "category": "secrets",
+      "file": "src/config/settings.py",
+      "line": 13,
+      "severity": "critical",
+      "refs": [
+        "github-pat"
+      ],
+      "description": "GitHub classic personal access token",
+      "code": "GITHUB_TOKEN = \"ghp_QdhJbYngmRZ4Xxdl7C9LoQNX3XKrJPBEziMk\""
+    },
+    {
+      "id": "SECRET-013",
+      "category": "secrets",
+      "file": "src/config/settings.py",
+      "line": 15,
+      "severity": "critical",
+      "refs": [
+        "github-fine-grained-pat"
+      ],
+      "description": "GitHub fine-grained personal access token",
+      "code": "GITHUB_FINE_GRAINED_TOKEN = \"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\""
+    },
+    {
+      "id": "SECRET-014",
+      "category": "secrets",
+      "file": "src/config/settings.py",
+      "line": 17,
+      "severity": "critical",
+      "refs": [
+        "gitlab-pat"
+      ],
+      "description": "GitLab personal access token",
+      "code": "GITLAB_TOKEN = \"glpat-uYw62zFjq0EzDvEV5sI1\""
+    },
+    {
+      "id": "SECRET-015",
+      "category": "secrets",
+      "file": "src/config/settings.py",
+      "line": 20,
+      "severity": "high",
+      "refs": [
+        "slack-bot-token"
+      ],
+      "description": "Slack bot token",
+      "code": "SLACK_BOT_TOKEN = \"xoxb-679832777590-6164029343833-LUEkakqchQqTYy3QILTfUoea\""
+    },
+    {
+      "id": "SECRET-016",
+      "category": "secrets",
+      "file": "src/config/settings.py",
+      "line": 22,
+      "severity": "medium",
+      "refs": [
+        "slack-webhook-url"
+      ],
+      "description": "Slack incoming webhook URL",
+      "code": "SLACK_WEBHOOK_URL = \"https://hooks.slack.com/services/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\""
+    },
+    {
+      "id": "SECRET-017",
+      "category": "secrets",
+      "file": "src/config/settings.py",
+      "line": 25,
+      "severity": "critical",
+      "refs": [
+        "stripe-live-secret-key"
+      ],
+      "description": "Stripe live secret key",
+      "code": "STRIPE_SECRET_KEY = \"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\""
+    },
+    {
+      "id": "SECRET-018",
+      "category": "secrets",
+      "file": "src/config/settings.py",
+      "line": 27,
+      "severity": "high",
+      "refs": [
+        "gcp-api-key"
+      ],
+      "description": "Google Cloud API key",
+      "code": "GOOGLE_MAPS_API_KEY = \"AIza9ErAXtl1iRTA7KyaJmMfCa4O-Zle00EblVp\""
+    },
+    {
+      "id": "SECRET-019",
+      "category": "secrets",
+      "file": "src/config/settings.py",
+      "line": 29,
+      "severity": "high",
+      "refs": [
+        "twilio-api-key"
+      ],
+      "description": "Twilio API key SID",
+      "code": "TWILIO_API_KEY = \"SK2b221dfe8d70c9012a418d37bf170930\""
+    },
+    {
+      "id": "SECRET-020",
+      "category": "secrets",
+      "file": "src/config/settings.py",
+      "line": 31,
+      "severity": "high",
+      "refs": [
+        "sendgrid-api-key"
+      ],
+      "description": "SendGrid API key",
+      "code": "SENDGRID_API_KEY = \"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\""
+    },
+    {
+      "id": "SECRET-021",
+      "category": "secrets",
+      "file": "src/config/settings.py",
+      "line": 33,
+      "severity": "high",
+      "refs": [
+        "npm-access-token"
+      ],
+      "description": "npm access token",
+      "code": "NPM_TOKEN = \"npm_pEIma6ZDPIwop9UgYM3u7JizqGF99KtsqYhO\""
+    },
+    {
+      "id": "SECRET-022",
+      "category": "secrets",
+      "file": "src/config/settings.py",
+      "line": 35,
+      "severity": "critical",
+      "refs": [
+        "openai-api-key"
+      ],
+      "description": "OpenAI project API key",
+      "code": "OPENAI_API_KEY = \"sk-proj-B-TaWi_d6m7MstidwmDC1dXyT1aLC1X6va3goT6lYKEllCpwNyNcvovIJIgS772fXKeZh1Jk9IWZFiKSEmg-r4zjjlqQNj-a7zJw790TEfv5CUF7VLivKVap\""
+    },
+    {
+      "id": "SECRET-023",
+      "category": "secrets",
+      "file": "src/config/settings.py",
+      "line": 37,
+      "severity": "critical",
+      "refs": [
+        "anthropic-api-key"
+      ],
+      "description": "Anthropic API key",
+      "code": "ANTHROPIC_API_KEY = \"sk-ant-api03-NICktRa1JtksCz0uO_BggPxL3ktcDQkIrVR7NMTZxgAw5nGGToE8U-r-F92pgFxWnlwQCUtOeXL0fnGY3Ahc146Z8o9lVAA\""
+    },
+    {
+      "id": "SECRET-024",
+      "category": "secrets",
+      "file": "src/config/settings.py",
+      "line": 39,
+      "severity": "critical",
+      "refs": [
+        "hashicorp-vault-token"
+      ],
+      "description": "HashiCorp Vault service token",
+      "code": "VAULT_TOKEN = \"hvs.Mwm3TNbB1NqqOUH4kSTZe85Q\""
+    },
+    {
+      "id": "SECRET-025",
+      "category": "secrets",
+      "file": "src/config/settings.py",
+      "line": 42,
+      "severity": "high",
+      "refs": [
+        "django-secret-key"
+      ],
+      "description": "Django SECRET_KEY",
+      "code": "SECRET_KEY = \"django-insecure-7(up18(ud6(n55+f+c+3niow^=nbqgbh_fwunt(cri4+f7ho33\""
+    },
+    {
+      "id": "SECRET-026",
+      "category": "secrets",
+      "file": "src/config/settings.py",
+      "line": 44,
+      "severity": "high",
+      "refs": [
+        "jwt"
+      ],
+      "description": "Signed JSON Web Token embedded in source",
+      "code": "SERVICE_JWT = \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0aWdlcmdhdGUtZml4dHVyZSIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc1Nzg5NDQwMH0.l1WpO_yl0Gu4XG8x2cIjIyXhcrceIsJIOOVSnU-VN3R\""
+    },
+    {
+      "id": "SECRET-027",
+      "category": "secrets",
+      "file": "src/config/settings.py",
+      "line": 46,
+      "severity": "critical",
+      "refs": [
+        "database-connection-string"
+      ],
+      "description": "PostgreSQL URI with embedded password",
+      "code": "DATABASE_URL = \"postgresql://tg_admin:Pr0d-zpL6aPjyCi54iu!@db.internal.example.com:5432/payments\""
+    },
+    {
+      "id": "SECRET-028",
+      "category": "secrets",
+      "file": "src/config/settings.py",
+      "line": 48,
+      "severity": "critical",
+      "refs": [
+        "azure-storage-account-key"
+      ],
+      "description": "Azure Storage connection string with AccountKey",
+      "code": "AZURE_STORAGE_CONNECTION_STRING = \"DefaultEndpointsProtocol=https;AccountName=tgfixturestore;AccountKey=cbK5KtYbTh69Q4tpG6ly1N58DD0IHJ7x8BXAysBDMcv9KlZlU6OvkWQIoTEao649D8HUP4keXhEksZcbiCzwPA==;EndpointSuffix=core.windows.net\""
+    },
+    {
+      "id": "SECRET-029",
+      "category": "secrets",
+      "file": "src/config/settings.py",
+      "line": 50,
+      "severity": "high",
+      "refs": [
+        "basic-auth-url"
+      ],
+      "description": "Credentials embedded in URL userinfo",
+      "code": "METRICS_ENDPOINT = \"https://metrics_user:d40b30b61deb315daa10@metrics.example.com/push\""
+    },
+    {
+      "id": "SECRET-030",
+      "category": "secrets",
+      "file": "src/config/settings.py",
+      "line": 52,
+      "severity": "medium",
+      "refs": [
+        "generic-password"
+      ],
+      "description": "High-entropy password assigned to password variable",
+      "code": "smtp_password = \"d40b30b61deb315daa1081979dcd11a409882aa773a0726a\""
+    },
+    {
+      "id": "SECRET-040",
+      "category": "secrets",
+      "file": ".env",
+      "line": 4,
+      "severity": "critical",
+      "refs": [
+        "aws-access-key-id"
+      ],
+      "description": "AWS access key ID in .env",
+      "code": "AWS_ACCESS_KEY_ID=AKIAGNGVBZSI4KCDHJMQ"
+    },
+    {
+      "id": "SECRET-041",
+      "category": "secrets",
+      "file": ".env",
+      "line": 6,
+      "severity": "critical",
+      "refs": [
+        "aws-secret-access-key"
+      ],
+      "description": "AWS secret access key in .env",
+      "code": "AWS_SECRET_ACCESS_KEY=bJ/6v+p2MAOGrMoN7tMsubQptQAiEvtyM/V0JdMY"
+    },
+    {
+      "id": "SECRET-042",
+      "category": "secrets",
+      "file": ".env",
+      "line": 8,
+      "severity": "critical",
+      "refs": [
+        "database-connection-string"
+      ],
+      "description": "MySQL URI with embedded password in .env",
+      "code": "DATABASE_URL=mysql://root:Pr0d-zpL6aPjyCi54iu!@10.0.3.17:3306/app"
+    },
+    {
+      "id": "SECRET-050",
+      "category": "secrets",
+      "file": "config/app-config.yaml",
+      "line": 9,
+      "severity": "high",
+      "refs": [
+        "generic-password"
+      ],
+      "description": "Hard-coded database password in YAML",
+      "code": "password: \"Pr0d-zpL6aPjyCi54iu!\""
+    },
+    {
+      "id": "SECRET-051",
+      "category": "secrets",
+      "file": "config/app-config.yaml",
+      "line": 12,
+      "severity": "high",
+      "refs": [
+        "slack-bot-token"
+      ],
+      "description": "Slack bot token in YAML",
+      "code": "slack_token: xoxb-679832777590-6164029343833-LUEkakqchQqTYy3QILTfUoea"
+    },
+    {
+      "id": "SECRET-052",
+      "category": "secrets",
+      "file": "config/app-config.yaml",
+      "line": 14,
+      "severity": "high",
+      "refs": [
+        "sendgrid-api-key"
+      ],
+      "description": "SendGrid API key in YAML",
+      "code": "sendgrid_key: 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"
+    },
+    {
+      "id": "SECRET-060",
+      "category": "secrets",
+      "file": "config/keys/fixture_id_rsa",
+      "line": 2,
+      "severity": "critical",
+      "refs": [
+        "private-key"
+      ],
+      "description": "PEM RSA private key (random body, not a parseable key)",
+      "code": "-----BEGIN RSA PRIVATE KEY-----"
+    },
+    {
+      "id": "SECRET-061",
+      "category": "secrets",
+      "file": "config/keys/fixture_ssh_ed25519",
+      "line": 2,
+      "severity": "critical",
+      "refs": [
+        "private-key"
+      ],
+      "description": "OpenSSH private key (random body, not a parseable key)",
+      "code": "-----BEGIN OPENSSH PRIVATE KEY-----"
+    },
+    {
+      "id": "SECRET-062",
+      "category": "secrets",
+      "file": "config/gcp-service-account.json",
+      "line": 5,
+      "severity": "critical",
+      "refs": [
+        "gcp-service-account-key"
+      ],
+      "description": "GCP service account JSON with embedded private key",
+      "code": "\"private_key\": \"-----BEGIN PRIVATE KEY-----\\na+t3MD1U0ZbRSgx..."
+    },
+    {
+      "id": "SECRET-063",
+      "category": "secrets",
+      "file": "config/gcp-service-account.json",
+      "line": 4,
+      "severity": "high",
+      "refs": [
+        "gcp-service-account-key"
+      ],
+      "description": "GCP service account private_key_id",
+      "code": "\"private_key_id\": \"82951a5a4423530b0448602521d60d9451f2dfac\"..."
+    },
+    {
+      "id": "SECRET-070",
+      "category": "secrets",
+      "file": "terraform/secrets.tf",
+      "line": 4,
+      "severity": "critical",
+      "refs": [
+        "aws-access-key-id"
+      ],
+      "description": "AWS documented example access key (many scanners allow-list *EXAMPLE)",
+      "code": "fixture_access_key = \"AKIAIOSFODNN7EXAMPLE\""
+    },
+    {
+      "id": "SECRET-071",
+      "category": "secrets",
+      "file": "terraform/secrets.tf",
+      "line": 6,
+      "severity": "low",
+      "refs": [
+        "generic-secret"
+      ],
+      "description": "Low-entropy placeholder secret key in Terraform local",
+      "code": "fixture_secret_key = \"not-a-real-aws-secret-for-scanner-testing\""
+    },
+    {
+      "id": "SECRET-072",
+      "category": "secrets",
+      "file": "terraform/aws_advanced.tf",
+      "line": 45,
+      "severity": "critical",
+      "refs": [
+        "generic-password"
+      ],
+      "description": "Hard-coded RDS master password",
+      "code": "password = \"Pr0d-zpL6aPjyCi54iu!\""
+    },
+    {
+      "id": "SECRET-073",
+      "category": "secrets",
+      "file": "terraform/aws_advanced.tf",
+      "line": 113,
+      "severity": "high",
+      "refs": [
+        "generic-password"
+      ],
+      "description": "Credential exported in EC2 user_data",
+      "code": "user_data = \"export DB_PASSWORD=Pr0d-zpL6aPjyCi54iu!\""
+    },
+    {
+      "id": "SECRET-074",
+      "category": "secrets",
+      "file": "terraform/azure/main.tf",
+      "line": 61,
+      "severity": "critical",
+      "refs": [
+        "generic-password"
+      ],
+      "description": "Hard-coded Azure SQL administrator password",
+      "code": "administrator_login_password = \"Pr0d-zpL6aPjyCi54iu!\""
+    },
+    {
+      "id": "SECRET-080",
+      "category": "secrets",
+      "file": "kubernetes/deployment.yaml",
+      "line": 27,
+      "severity": "medium",
+      "refs": [
+        "generic-password"
+      ],
+      "description": "Plaintext password in container env",
+      "code": "value: \"fixture-password-not-real\""
+    },
+    {
+      "id": "SECRET-081",
+      "category": "secrets",
+      "file": "kubernetes/insecure-workload.yaml",
+      "line": 77,
+      "severity": "critical",
+      "refs": [
+        "aws-access-key-id"
+      ],
+      "description": "AWS access key stored in ConfigMap",
+      "code": "AWS_ACCESS_KEY_ID: AKIAGNGVBZSI4KCDHJMQ"
+    },
+    {
+      "id": "SECRET-082",
+      "category": "secrets",
+      "file": "kubernetes/insecure-workload.yaml",
+      "line": 79,
+      "severity": "critical",
+      "refs": [
+        "aws-secret-access-key"
+      ],
+      "description": "AWS secret key stored in ConfigMap",
+      "code": "AWS_SECRET_ACCESS_KEY: bJ/6v+p2MAOGrMoN7tMsubQptQAiEvtyM/V0JdMY"
+    },
+    {
+      "id": "SECRET-090",
+      "category": "secrets",
+      "file": "cloudformation/insecure-stack.yaml",
+      "line": 29,
+      "severity": "critical",
+      "refs": [
+        "generic-password"
+      ],
+      "description": "Hard-coded RDS master password in CloudFormation",
+      "code": "MasterUserPassword: \"Pr0d-zpL6aPjyCi54iu!\""
+    },
+    {
+      "id": "SECRET-100",
+      "category": "secrets",
+      "file": "docker/Dockerfile.insecure",
+      "line": 6,
+      "severity": "critical",
+      "refs": [
+        "aws-access-key-id"
+      ],
+      "description": "AWS access key baked into image ENV",
+      "code": "ENV AWS_ACCESS_KEY_ID=AKIAGNGVBZSI4KCDHJMQ"
+    },
+    {
+      "id": "SECRET-101",
+      "category": "secrets",
+      "file": "docker/Dockerfile.insecure",
+      "line": 8,
+      "severity": "critical",
+      "refs": [
+        "github-pat"
+      ],
+      "description": "GitHub token passed as build ARG default",
+      "code": "ARG GITHUB_TOKEN=ghp_QdhJbYngmRZ4Xxdl7C9LoQNX3XKrJPBEziMk"
+    },
+    {
+      "id": "SECRET-102",
+      "category": "secrets",
+      "file": "docker/docker-compose.insecure.yml",
+      "line": 18,
+      "severity": "critical",
+      "refs": [
+        "generic-password"
+      ],
+      "description": "Plaintext database password in compose environment",
+      "code": "POSTGRES_PASSWORD: \"Pr0d-zpL6aPjyCi54iu!\""
+    }
+  ],
+  "negative_controls": [
+    {
+      "id": "NEG-IAC-001",
+      "category": "iac",
+      "file": "kubernetes/secure-deployment.yaml",
+      "line": 26,
+      "soft": true,
+      "description": "Image pinned by digest (registry allow-list rules are org policy, not a misconfiguration)",
+      "code": "image: ghcr.io/example/tg-fixture-hardened@sha256:0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "id": "NEG-IAC-002",
+      "category": "iac",
+      "file": "kubernetes/secure-deployment.yaml",
+      "line": 30,
+      "soft": false,
+      "description": "Privilege escalation disabled",
+      "code": "allowPrivilegeEscalation: false"
+    },
+    {
+      "id": "NEG-IAC-003",
+      "category": "iac",
+      "file": "kubernetes/secure-deployment.yaml",
+      "line": 32,
+      "soft": false,
+      "description": "Read-only root filesystem",
+      "code": "readOnlyRootFilesystem: true"
+    },
+    {
+      "id": "NEG-SAST-001",
+      "category": "sast",
+      "file": "src/safe/safe_patterns.py",
+      "line": 27,
+      "soft": false,
+      "description": "Parameterized query",
+      "code": "return conn.execute(\"SELECT * FROM users WHERE name = ?\", (username,)).fetchall()"
+    },
+    {
+      "id": "NEG-SAST-002",
+      "category": "sast",
+      "file": "src/safe/safe_patterns.py",
+      "line": 33,
+      "soft": true,
+      "description": "f-string SQL with value sanitised by int() (taint engines should clear it)",
+      "code": "return conn.execute(f\"SELECT * FROM orders WHERE user_id = {safe_id}\").fetchall()"
+    },
+    {
+      "id": "NEG-SAST-003",
+      "category": "sast",
+      "file": "src/safe/safe_patterns.py",
+      "line": 38,
+      "soft": false,
+      "description": "subprocess with argument list, no shell",
+      "code": "return subprocess.run([\"ping\", \"-c\", \"1\", host], check=True, capture_output=True).stdout"
+    },
+    {
+      "id": "NEG-SAST-004",
+      "category": "sast",
+      "file": "src/safe/safe_patterns.py",
+      "line": 43,
+      "soft": true,
+      "description": "shlex.quote before shell execution",
+      "code": "return subprocess.check_output(\"ls -la \" + shlex.quote(path), shell=True)"
+    },
+    {
+      "id": "NEG-SAST-005",
+      "category": "sast",
+      "file": "src/safe/safe_patterns.py",
+      "line": 48,
+      "soft": false,
+      "description": "yaml.safe_load",
+      "code": "return yaml.safe_load(stream)"
+    },
+    {
+      "id": "NEG-SAST-006",
+      "category": "sast",
+      "file": "src/safe/safe_patterns.py",
+      "line": 53,
+      "soft": false,
+      "description": "PBKDF2-HMAC-SHA256 with 600k iterations",
+      "code": "return hashlib.pbkdf2_hmac(\"sha256\", password.encode(), salt, 600_000)"
+    },
+    {
+      "id": "NEG-SAST-007",
+      "category": "sast",
+      "file": "src/safe/safe_patterns.py",
+      "line": 58,
+      "soft": false,
+      "description": "MD5 explicitly marked non-security (usedforsecurity=False)",
+      "code": "return hashlib.md5(data, usedforsecurity=False).hexdigest()"
+    },
+    {
+      "id": "NEG-SAST-008",
+      "category": "sast",
+      "file": "src/safe/safe_patterns.py",
+      "line": 63,
+      "soft": false,
+      "description": "CSPRNG via secrets module",
+      "code": "return secrets.token_urlsafe(32)"
+    },
+    {
+      "id": "NEG-SAST-009",
+      "category": "sast",
+      "file": "src/safe/safe_patterns.py",
+      "line": 68,
+      "soft": false,
+      "description": "TLS verification on (default) with timeout",
+      "code": "return requests.get(url, timeout=10).text"
+    },
+    {
+      "id": "NEG-SAST-010",
+      "category": "sast",
+      "file": "src/safe/safe_patterns.py",
+      "line": 73,
+      "soft": false,
+      "description": "Constant-time comparison",
+      "code": "return hmac.compare_digest(signature, expected)"
+    },
+    {
+      "id": "NEG-SAST-011",
+      "category": "sast",
+      "file": "src/safe/safe_patterns.py",
+      "line": 78,
+      "soft": false,
+      "description": "tempfile.mkstemp",
+      "code": "fd, path = tempfile.mkstemp()"
+    },
+    {
+      "id": "NEG-SAST-012",
+      "category": "sast",
+      "file": "src/safe/safe_patterns.py",
+      "line": 85,
+      "soft": false,
+      "description": "defusedxml parser",
+      "code": "return SafeET.fromstring(xml_text)"
+    },
+    {
+      "id": "NEG-SAST-013",
+      "category": "sast",
+      "file": "src/safe/safe_patterns.py",
+      "line": 90,
+      "soft": false,
+      "description": "Linear-time regex",
+      "code": "return re.fullmatch(r\"[a-z0-9-]{1,63}\", label) is not None"
+    },
+    {
+      "id": "NEG-SAST-014",
+      "category": "sast",
+      "file": "src/safe/safe_patterns.py",
+      "line": 96,
+      "soft": false,
+      "description": "User input HTML-escaped before rendering",
+      "code": "return \"<h1>Hello \" + str(escape(request.args.get(\"name\", \"\"))) + \"</h1>\""
+    },
+    {
+      "id": "NEG-SAST-015",
+      "category": "sast",
+      "file": "src/safe/safe_patterns.py",
+      "line": 102,
+      "soft": false,
+      "description": "send_from_directory confines path to UPLOAD_DIR",
+      "code": "return send_from_directory(UPLOAD_DIR, request.args[\"file\"])"
+    },
+    {
+      "id": "NEG-SAST-016",
+      "category": "sast",
+      "file": "src/safe/safe_patterns.py",
+      "line": 109,
+      "soft": false,
+      "description": "secure_filename applied to upload name",
+      "code": "uploaded.save(os.path.join(UPLOAD_DIR, secure_filename(uploaded.filename)))"
+    },
+    {
+      "id": "NEG-SAST-017",
+      "category": "sast",
+      "file": "src/safe/safe_patterns.py",
+      "line": 119,
+      "soft": false,
+      "description": "Redirect target validated against allow-list",
+      "code": "return redirect(url_for(target))"
+    },
+    {
+      "id": "NEG-SAST-018",
+      "category": "sast",
+      "file": "src/safe/safe_patterns.py",
+      "line": 124,
+      "soft": false,
+      "description": "Loopback bind, debug off",
+      "code": "app.run(host=\"127.0.0.1\", port=5000, debug=False)"
+    },
+    {
+      "id": "NEG-SCA-001",
+      "category": "sca",
+      "file": "requirements-dev.txt",
+      "line": 11,
+      "soft": false,
+      "description": "six has no published CVEs - must NOT be reported as vulnerable (still expected in SBOM)",
+      "code": "six==1.17.0"
+    },
+    {
+      "id": "NEG-SCA-002",
+      "category": "sca",
+      "file": "pyproject.toml",
+      "line": 21,
+      "soft": false,
+      "description": "packaging 24.2 has no published CVEs - must NOT be reported as vulnerable",
+      "code": "\"packaging==24.2\","
+    },
+    {
+      "id": "NEG-SECRET-001",
+      "category": "secrets",
+      "file": "src/safe/safe_config.py",
+      "line": 6,
+      "soft": false,
+      "description": "Secret read from environment",
+      "code": "STRIPE_SECRET_KEY = os.environ.get(\"STRIPE_SECRET_KEY\")"
+    },
+    {
+      "id": "NEG-SECRET-002",
+      "category": "secrets",
+      "file": "src/safe/safe_config.py",
+      "line": 8,
+      "soft": false,
+      "description": "Placeholder value",
+      "code": "OPENAI_API_KEY = \"<YOUR_OPENAI_API_KEY>\""
+    },
+    {
+      "id": "NEG-SECRET-003",
+      "category": "secrets",
+      "file": "src/safe/safe_config.py",
+      "line": 10,
+      "soft": false,
+      "description": "Template variable reference",
+      "code": "AWS_SECRET_ACCESS_KEY = \"${AWS_SECRET_ACCESS_KEY}\""
+    },
+    {
+      "id": "NEG-SECRET-004",
+      "category": "secrets",
+      "file": "src/safe/safe_config.py",
+      "line": 12,
+      "soft": false,
+      "description": "Empty password with secret injected at runtime",
+      "code": "DB_PASSWORD = \"\""
+    },
+    {
+      "id": "NEG-SECRET-005",
+      "category": "secrets",
+      "file": "src/safe/safe_config.py",
+      "line": 14,
+      "soft": true,
+      "description": "SHA-256 checksum of a release artifact (high entropy, not a secret)",
+      "code": "RELEASE_TARBALL_SHA256 = \"a79ebc752a632e806762d05ad57333e3cb9bae22bdf591aa542281071b0214a3\""
+    },
+    {
+      "id": "NEG-SECRET-006",
+      "category": "secrets",
+      "file": "src/safe/safe_config.py",
+      "line": 16,
+      "soft": true,
+      "description": "Git commit SHA (high entropy, not a secret)",
+      "code": "BUILD_COMMIT = \"4f78c4391dc5ad79ea71a52fcf878c5c1053ce1e\""
+    },
+    {
+      "id": "NEG-SECRET-007",
+      "category": "secrets",
+      "file": "src/safe/safe_config.py",
+      "line": 18,
+      "soft": false,
+      "description": "Random UUID generated at runtime",
+      "code": "REQUEST_ID = str(uuid.uuid4())"
+    },
+    {
+      "id": "NEG-SECRET-008",
+      "category": "secrets",
+      "file": "src/safe/safe_config.py",
+      "line": 20,
+      "soft": false,
+      "description": "Password field name only, no value",
+      "code": "PASSWORD_FIELD_NAME = \"password\""
+    },
+    {
+      "id": "NEG-SECRET-010",
+      "category": "secrets",
+      "file": ".env",
+      "line": 10,
+      "soft": false,
+      "description": "Non-secret configuration value",
+      "code": "LOG_LEVEL=info"
+    },
+    {
+      "id": "NEG-SECRET-020",
+      "category": "secrets",
+      "file": "config/app-config.yaml",
+      "line": 5,
+      "soft": false,
+      "description": "Non-secret hostname",
+      "code": "host: api.example.com"
+    },
+    {
+      "id": "NEG-SECRET-021",
+      "category": "secrets",
+      "file": "config/app-config.yaml",
+      "line": 16,
+      "soft": false,
+      "description": "Reference to a secret manager path, not a secret",
+      "code": "stripe_key_ref: \"vault:secret/data/payments#stripe_key\""
+    },
+    {
+      "id": "NEG-SECRET-030",
+      "category": "secrets",
+      "file": "kubernetes/secure-deployment.yaml",
+      "line": 47,
+      "soft": false,
+      "description": "Password sourced from a Kubernetes Secret reference",
+      "code": "secretKeyRef: { name: db-credentials, key: password }"
+    }
+  ]
+}

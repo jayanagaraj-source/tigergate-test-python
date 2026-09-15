@@ -1,0 +1,51 @@
+# Deliberately insecure CloudFormation fixture. Do not deploy.
+AWSTemplateFormatVersion: "2010-09-09"
+Description: TigerGate IaC scanner fixture
+Resources:
+  PublicBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: tg-fixture-cfn-public
+      # tg-expect: IAC-140 | critical | public-storage | S3 bucket AccessControl PublicReadWrite
+      AccessControl: PublicReadWrite
+  AdminSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: admin access
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          # tg-expect: IAC-141 | critical | public-ingress-admin-port | Security group allows SSH from 0.0.0.0/0
+          CidrIp: 0.0.0.0/0
+  Database:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      Engine: mysql
+      DBInstanceClass: db.t3.micro
+      AllocatedStorage: "20"
+      MasterUsername: admin
+      # tg-expect: SECRET-090 | critical | generic-password | Hard-coded RDS master password in CloudFormation
+      MasterUserPassword: "Pr0d-zpL6aPjyCi54iu!"
+      # tg-expect: IAC-142 | critical | public-database | RDS PubliclyAccessible true
+      PubliclyAccessible: true
+      # tg-expect: IAC-143 | high | encryption-at-rest | RDS StorageEncrypted false
+      StorageEncrypted: false
+  AdminPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            # tg-expect: IAC-144 | critical | iam-wildcard | IAM managed policy allows Action "*" on Resource "*"
+            Action: "*"
+            Resource: "*"
+  Trail:
+    Type: AWS::CloudTrail::Trail
+    Properties:
+      IsLogging: true
+      S3BucketName:
+        Ref: PublicBucket
+      # tg-expect: IAC-145 | medium | audit-logging | CloudTrail log file validation disabled
+      EnableLogFileValidation: false

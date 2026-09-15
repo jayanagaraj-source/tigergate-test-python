@@ -1,0 +1,79 @@
+# Deliberately insecure Kubernetes fixture. Do not apply.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: tg-fixture-node-debugger
+  # tg-expect: IAC-110 | low | default-namespace | Workload deployed to default namespace
+  namespace: default
+spec:
+  # tg-expect: IAC-111 | high | host-namespace | Pod shares host PID namespace
+  hostPID: true
+  # tg-expect: IAC-112 | high | host-namespace | Pod shares host IPC namespace
+  hostIPC: true
+  # tg-expect: IAC-113 | medium | service-account-token | Service account token auto-mounted
+  automountServiceAccountToken: true
+  containers:
+    - name: debugger
+      # tg-expect: IAC-114 | medium | image-without-digest | Image from public registry without tag or digest
+      image: docker.io/library/ubuntu
+      command: ["sleep", "infinity"]
+      securityContext:
+        # tg-expect: IAC-115 | high | privilege-escalation | allowPrivilegeEscalation true
+        allowPrivilegeEscalation: true
+        # tg-expect: IAC-116 | medium | writable-root-fs | Root filesystem writable
+        readOnlyRootFilesystem: false
+        # tg-expect: IAC-117 | high | run-as-root | runAsNonRoot explicitly false
+        runAsNonRoot: false
+        capabilities:
+          add:
+            # tg-expect: IAC-118 | critical | dangerous-capability | SYS_ADMIN capability added
+            - SYS_ADMIN
+            # tg-expect: IAC-119 | high | dangerous-capability | NET_ADMIN capability added
+            - NET_ADMIN
+      # tg-expect: IAC-120 | medium | resource-limits | No CPU/memory requests or limits
+      resources: {}
+      ports:
+        - containerPort: 22
+          # tg-expect: IAC-121 | medium | host-port | Container port bound to host port
+          hostPort: 22
+      volumeMounts:
+        - name: host-root
+          mountPath: /host
+        - name: docker-sock
+          mountPath: /var/run/docker.sock
+  volumes:
+    - name: host-root
+      hostPath:
+        # tg-expect: IAC-122 | critical | hostpath-mount | Host root filesystem mounted into pod
+        path: /
+    - name: docker-sock
+      hostPath:
+        # tg-expect: IAC-123 | critical | hostpath-mount | Docker socket mounted into pod
+        path: /var/run/docker.sock
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tg-fixture-admin
+  namespace: default
+spec:
+  # tg-expect: IAC-124 | medium | exposed-service | Admin service exposed via NodePort
+  type: NodePort
+  selector:
+    app: tg-fixture-node-debugger
+  ports:
+    - port: 22
+      targetPort: 22
+      nodePort: 30022
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tg-fixture-config
+  namespace: default
+data:
+  LOG_LEVEL: info
+  # tg-expect: SECRET-081 | critical | aws-access-key-id | AWS access key stored in ConfigMap
+  AWS_ACCESS_KEY_ID: AKIAGNGVBZSI4KCDHJMQ
+  # tg-expect: SECRET-082 | critical | aws-secret-access-key | AWS secret key stored in ConfigMap
+  AWS_SECRET_ACCESS_KEY: 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

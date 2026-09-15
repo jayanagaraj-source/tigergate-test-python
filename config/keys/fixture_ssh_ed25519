@@ -1,0 +1,12 @@
+# tg-expect: SECRET-061 | critical | private-key | OpenSSH private key (random body, not a parseable key)
+-----BEGIN OPENSSH PRIVATE KEY-----
+WokGA/NfG3SSNnp69zzTFr0UVynkADKZzsP1k/e+d2Fce5Gf2tEwroMz30/r31/AODBZ85
+fUerS/mqkhIv32cEG0G5hEsKinOveGoNtE+QDnj4FDWLSWPXjMd1v6nWUomjq1S55Zts1S
+9WKkvNCoG5T/xnQ1jLh7csWrhdJHhiWavsZdoD73vPHZ15CSzKYbwSZQSa4Fjp0GdeK7Ok
+g5KRH1Nh/K5JaAAezGKdBRNuSdtBcsTzyVBI5grTDMRwSVnX2GBvwNloyoiChSX7MI2rcj
+rzuj8MKE0KEScTnnaPzGfYbZrkE1kgcrMM2AV6xYWIkVjk3P38b1b77sclIq/oPxj9Vd1k
+LXW6bfxsogUdj/svbkcikkThmr5Pp4uVZYalBnMs5z0TUgQ8H9RZknkukNOLQxTMd30N7o
+8TJbPgPaMWwlwvFKzHVoa+7e4LJBvNMbgwreutRyH2qoGwpLsyWhzcljmW6USyqdVJFDvA
+L3mi0aICUDt/BqCpaIFs+/IFdtkdB9F0g0WnbrlXQzaaG8ha/DfM80wyoj7duXVqljWNfU
+10mJgIV9cPKZSFs5LntMVPDXhjrJfE=
+-----END OPENSSH PRIVATE KEY-----

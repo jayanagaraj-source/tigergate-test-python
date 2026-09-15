@@ -1,0 +1,47 @@
+# Negative control: hardened Deployment. Scanners should report no misconfigurations here.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tg-fixture-hardened
+  namespace: tg-fixture-apps
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: tg-fixture-hardened }
+  template:
+    metadata:
+      labels: { app: tg-fixture-hardened }
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: app
+          # tg-negative: NEG-IAC-001 | [soft] Image pinned by digest (registry allow-list rules are org policy, not a misconfiguration)
+          image: ghcr.io/example/tg-fixture-hardened@sha256:0000000000000000000000000000000000000000000000000000000000000000
+          imagePullPolicy: Always
+          securityContext:
+            # tg-negative: NEG-IAC-002 | Privilege escalation disabled
+            allowPrivilegeEscalation: false
+            # tg-negative: NEG-IAC-003 | Read-only root filesystem
+            readOnlyRootFilesystem: true
+            privileged: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { cpu: 500m, memory: 256Mi }
+          livenessProbe:
+            httpGet: { path: /healthz, port: 8080 }
+          readinessProbe:
+            httpGet: { path: /readyz, port: 8080 }
+          env:
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                # tg-negative: NEG-SECRET-030 | Password sourced from a Kubernetes Secret reference
+                secretKeyRef: { name: db-credentials, key: password }
