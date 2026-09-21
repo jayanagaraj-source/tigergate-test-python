@@ -1,19 +1,5 @@
-# TigerGate security scanning on every Pull Request.
-#
-# Design notes for this repository (see SECURITY_FIXTURES.md):
-#   * Dependencies are NEVER installed. The pins in requirements*.txt are
-#     deliberately vulnerable and unbuildable on modern Python (lxml 4.6.2,
-#     numpy 1.16.0, cryptography 2.2 have no wheels and fail to compile), so
-#     `pip install -r requirements.txt` would fail every PR. TigerGate reads the
-#     manifests statically, which is all this repo needs.
-#   * Terraform/Kubernetes/CloudFormation are scanned as files: no `terraform
-#     init` (there are no module or backend blocks) and no `docker build`.
-#   * Runtime setup is driven by the `detect` job, so adding a pom.xml,
-#     package.json, go.mod, ... later switches the matching setup step on
-#     without editing this file.
-#   * Actions are pinned to commit SHAs and no `${{ }}` expression is
-#     interpolated into a `run:` body, so this workflow passes the same IaC and
-#     CI rules TigerGate applies to the fixtures in ci-fixtures/.
+# TigerGate scan on every PR. Dependencies are never installed: the pins in
+# requirements*.txt are deliberately unbuildable (see SECURITY_FIXTURES.md).
 
 name: TigerGate
 
@@ -21,10 +7,7 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
-# Least privilege: TigerGate reads the checkout and sends results to its own
-# backend, so the job needs nothing else.
-#   pull-requests: write  -> add ONLY if you enable PR comments
-#   security-events: write -> add ONLY if you upload SARIF to code scanning
+# Add pull-requests:write for PR comments, security-events:write for SARIF upload.
 permissions:
   contents: read
 
@@ -92,8 +75,7 @@ jobs:
               version="$(grep -oE 'requires-python[[:space:]]*=[[:space:]]*"[^"]+"' pyproject.toml \
                           | grep -oE '[0-9]+\.[0-9]+' | head -1 || true)"
             fi
-            # This repo declares >=3.8, but scripts/build_expected_findings.py uses
-            # str.removeprefix (3.9+) and the fixtures were authored on 3.10.
+            # Repo declares >=3.8 but scripts/ use str.removeprefix (3.9+).
             case "$version" in
               ""|3.8|3.7|3.6|2.*) version="3.10" ;;
             esac
@@ -220,27 +202,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          # TigerGate scans the working tree; full history is not needed.
           fetch-depth: 1
           persist-credentials: false
-
-      # ------------------------------------------------------------------
-      # Runtime setup. Only the steps whose ecosystem was detected will run.
-      # Today that is Python alone; the rest stay dormant until a matching
-      # manifest appears in the repository.
-      #
-      # No dependency installation happens anywhere in this job. Add an
-      # install/restore step ONLY for an ecosystem where TigerGate needs the
-      # resolved graph (e.g. `dotnet restore`, `mvn dependency:go-offline`) and
-      # where those dependencies can actually be resolved.
-      # ------------------------------------------------------------------
 
       - name: Setup Python
         if: needs.detect.outputs.python == 'true'
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: ${{ needs.detect.outputs.python_version }}
-          # No `cache: pip`: nothing is installed, so a cache would only add noise.
 
       - name: Setup Node
         if: needs.detect.outputs.node == 'true'
@@ -254,10 +223,7 @@ jobs:
         with:
           distribution: temurin
           java-version: ${{ needs.detect.outputs.java_version }}
-          # Gradle projects: prefer the committed ./gradlew wrapper over a
-          # runner-installed Gradle so the project's own version is used.
 
-      # global.json pins the SDK when present; otherwise the latest LTS is used.
       - name: Setup .NET (global.json)
         if: needs.detect.outputs.dotnet == 'true' && hashFiles('global.json') != ''
         uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
@@ -270,10 +236,8 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
+      # Resolves the full transitive graph; the one install this workflow does.
       - name: Restore .NET dependencies
-        # dotnet restore is what turns declared PackageReference entries into a
-        # complete resolved graph, so it runs for .NET even though this workflow
-        # otherwise avoids installs.
         if: needs.detect.outputs.dotnet == 'true'
         run: dotnet restore
 
@@ -299,34 +263,16 @@ jobs:
         if: needs.detect.outputs.rust == 'true'
         run: rustup toolchain install stable --profile minimal
 
-      # ------------------------------------------------------------------
-      # TigerGate CLI.
-      #
-      # >>> CONFIGURE THIS STEP TO MATCH YOUR INSTANCE <<<
-      # The repository defines no TigerGate invocation, so this uses the Docker
-      # CLI form. Replace the image and arguments with the command shown on your
-      # TigerGate "CI/CD Pipeline" page. Two common alternatives:
-      #
-      #   pip-installed CLI:
-      #     python -m pip install --upgrade tigergate-cli
-      #     tigergate scan --path .
-      #
-      #   installer script:
-      #     curl -fsSL "$TIGERGATE_API_URL/install.sh" | sh
-      #     tigergate scan --path .
-      #
-      # Set the image via the TIGERGATE_CLI_IMAGE repository variable
-      # (Settings > Secrets and variables > Actions > Variables).
-      # ------------------------------------------------------------------
+      # >>> REPLACE with the command from your TigerGate CI/CD Pipeline page. <<<
+      # Alternatives: `pip install tigergate-cli && tigergate scan --path .`
+      # or `curl -fsSL "$TIGERGATE_API_URL/install.sh" | sh`.
+      # Image comes from the TIGERGATE_CLI_IMAGE repository variable.
       - name: Run TigerGate scan
         env:
           TIGERGATE_API_KEY: ${{ secrets.TIGERGATE_API_KEY }}
           TIGERGATE_API_URL: ${{ secrets.TIGERGATE_API_URL }}
           TIGERGATE_CLI_IMAGE: ${{ vars.TIGERGATE_CLI_IMAGE }}
-          # Report-only by default: this repository contains 241 intentional
-          # findings, so a severity gate would fail every PR. Set the
-          # TIGERGATE_FAIL_ON repository variable (e.g. "critical") once those
-          # fixtures are baselined in a TigerGate policy.
+          # Report-only: 241 intentional findings would fail every PR otherwise.
           TIGERGATE_FAIL_ON: ${{ vars.TIGERGATE_FAIL_ON }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
