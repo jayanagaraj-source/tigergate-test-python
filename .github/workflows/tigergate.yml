@@ -1,7 +1,16 @@
-# TigerGate scan on every PR. Dependencies are never installed: the pins in
-# requirements*.txt are deliberately unbuildable (see SECURITY_FIXTURES.md).
-
-name: TigerGate
+# TigerGate security scan. Runs the TigerGate CLI container against this
+# repository and uploads results.
+#
+# Toolchains are provisioned automatically: the "Provision toolchains" step
+# detects the manifests present (pom.xml, *.csproj, package.json, go.mod, ...)
+# and installs only the matching runtime, so SCA resolves the full transitive
+# graph instead of degrading to static manifest parsing. Nothing is installed
+# for an ecosystem that is absent, or if the CLI image already ships the tool.
+#
+# Project dependencies themselves are NEVER installed: this repo's Python pins
+# are deliberately unbuildable (see SECURITY_FIXTURES.md), and TigerGate reads
+# requirements*.txt / pyproject.toml statically.
+name: TigerGate Security Scan
 
 on:
   pull_request:
@@ -85,113 +94,168 @@ jobs:
 
       - name: Check configuration
         run: |
-          set -euo pipefail
+          if [ -z "${TIGERGATE_API_KEY:-}" ]; then
+            echo "::error title=TigerGate not configured::Set the TIGERGATE_API_KEY repository secret."
+            exit 1
+          fi
+          tigergate --version
 
-          has() { [ -n "$(find . -path ./.git -prune -o -name "$1" -print -quit)" ]; }
-          emit() { echo "$1=$2" >> "$GITHUB_OUTPUT"; }
+      # Installs a toolchain only when the repository actually needs it and the
+      # image does not already provide it. Relevant to dependency resolution, so
+      # it is skipped for scan types that do not do SCA.
+      #
+      #   pom.xml / build.gradle  -> JDK + Maven   (Gradle uses ./gradlew)
+      #   *.csproj / global.json  -> .NET SDK      (honours global.json pin)
+      #   package.json            -> Node + npm
+      #   go.mod                  -> Go
+      #   Gemfile                 -> Ruby + Bundler
+      #   composer.json           -> PHP + Composer
+      #   Cargo.toml              -> Rust + Cargo
+      #   requirements*.txt       -> Python (interpreter only, no pip install)
+      #
+      # A non-Debian image or a failed install downgrades SCA to static manifest
+      # parsing; it warns rather than failing the scan.
+      - name: Provision toolchains
+        if: contains(fromJSON('["all","sca"]'), env.SCAN_TYPE)
+        run: |
+          set -u
+          NEEDED=""
+          have() { command -v "$1" >/dev/null 2>&1; }
+          found() { [ -n "$(find . -path ./.git -prune -o -name "$1" -print -quit)" ]; }
+          need() { NEEDED="$NEEDED $1"; }
 
-          # ---------- Python ----------
-          if has 'pyproject.toml' || has 'requirements*.txt' || has 'Pipfile' \
-             || has 'poetry.lock' || has 'setup.py' || has 'setup.cfg'; then
-            emit python true
-            # Version precedence: .python-version > pyproject requires-python floor > default
-            version=""
-            if [ -f .python-version ]; then
-              version="$(tr -d '[:space:]' < .python-version)"
-            elif [ -f pyproject.toml ]; then
-              version="$(grep -oE 'requires-python[[:space:]]*=[[:space:]]*"[^"]+"' pyproject.toml \
-                          | grep -oE '[0-9]+\.[0-9]+' | head -1 || true)"
-            fi
-            # Repo declares >=3.8 but scripts/ use str.removeprefix (3.9+).
-            case "$version" in
-              ""|3.8|3.7|3.6|2.*) version="3.10" ;;
-            esac
-            emit python_version "$version"
+          if have apt-get; then
+            APT=1
           else
-            emit python false
-            emit python_version ""
+            APT=0
+            echo "::warning::No apt-get in this image - a missing toolchain will downgrade SCA to static manifest parsing."
+          fi
+
+          # ---------- Java (Maven / Gradle) ----------
+          # JDK version comes from .java-version, else 21 (which compiles
+          # source/target 17 fine). Gradle builds use the committed ./gradlew.
+          if found 'pom.xml' || found 'build.gradle' || found 'build.gradle.kts'; then
+            JDK=21
+            [ -f .java-version ] && JDK="$(tr -dc '0-9' < .java-version | head -c2)"
+            case "$JDK" in 8|11|17|21|25) ;; *) JDK=21 ;; esac
+            have java || need "openjdk-${JDK}-jdk-headless"
+            if found 'pom.xml'; then
+              have mvn || need "maven"
+            fi
+            have java && have mvn && echo "Java toolchain already present."
+          fi
+
+          # ---------- .NET ----------
+          if found '*.csproj' || found '*.fsproj' || found '*.vbproj' || found 'global.json'; then
+            if have dotnet; then
+              echo ".NET SDK already present."
+            elif have curl; then
+              # Official installer; --jsonfile honours the SDK pinned in global.json.
+              curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh
+              chmod +x /tmp/dotnet-install.sh
+              if [ -f global.json ]; then
+                /tmp/dotnet-install.sh --jsonfile global.json --install-dir /usr/share/dotnet
+              else
+                /tmp/dotnet-install.sh --channel LTS --install-dir /usr/share/dotnet
+              fi
+              ln -sf /usr/share/dotnet/dotnet /usr/local/bin/dotnet
+              echo "DOTNET_ROOT=/usr/share/dotnet" >> "$GITHUB_ENV"
+            else
+              echo "::warning::.NET project detected but neither dotnet nor curl is available."
+            fi
           fi
 
           # ---------- Node ----------
-          if has 'package.json'; then
-            emit node true
-            version=""
-            if [ -f .nvmrc ]; then version="$(tr -d '[:space:]v' < .nvmrc)"; fi
-            if [ -z "$version" ] && [ -f .node-version ]; then version="$(tr -d '[:space:]v' < .node-version)"; fi
-            if [ -z "$version" ]; then version="lts/*"; fi
-            emit node_version "$version"
-          else
-            emit node false
-            emit node_version ""
-          fi
-
-          # ---------- Java ----------
-          if has 'pom.xml'; then emit java_maven true; else emit java_maven false; fi
-          if has 'build.gradle' || has 'build.gradle.kts'; then
-            emit java_gradle true
-          else
-            emit java_gradle false
-          fi
-          version=""
-          if [ -f .java-version ]; then
-            version="$(tr -d '[:space:]' < .java-version)"
-          elif [ -f pom.xml ]; then
-            version="$(grep -oE '<maven.compiler.release>[0-9]+' pom.xml | grep -oE '[0-9]+' | head -1 || true)"
-            if [ -z "$version" ]; then
-              version="$(grep -oE '<java.version>[0-9.]+' pom.xml | grep -oE '[0-9]+' | head -1 || true)"
-            fi
-          fi
-          if [ -z "$version" ]; then version="21"; fi
-          emit java_version "$version"
-
-          # ---------- .NET ----------
-          if has 'global.json' || has '*.csproj' || has '*.fsproj' || has '*.vbproj' \
-             || has 'Directory.Packages.props'; then
-            emit dotnet true
-          else
-            emit dotnet false
+          if found 'package.json'; then
+            if have node && have npm; then echo "Node already present."; else need "nodejs npm"; fi
           fi
 
           # ---------- Go ----------
-          if has 'go.mod'; then
-            emit go true
-            version="$(grep -oE '^go[[:space:]]+[0-9]+\.[0-9]+' go.mod | grep -oE '[0-9]+\.[0-9]+' | head -1 || true)"
-            if [ -z "$version" ]; then version="stable"; fi
-            emit go_version "$version"
-          else
-            emit go false
-            emit go_version ""
+          if found 'go.mod'; then
+            if have go; then echo "Go already present."; else need "golang-go"; fi
           fi
 
           # ---------- Ruby ----------
-          if has 'Gemfile'; then
-            emit ruby true
-            version=""
-            if [ -f .ruby-version ]; then version="$(tr -d '[:space:]' < .ruby-version)"; fi
-            if [ -z "$version" ]; then version="3.3"; fi
-            emit ruby_version "$version"
-          else
-            emit ruby false
-            emit ruby_version ""
+          if found 'Gemfile'; then
+            if have ruby && have bundle; then echo "Ruby already present."; else need "ruby-full"; fi
           fi
 
           # ---------- PHP ----------
-          if has 'composer.json'; then
-            emit php true
-            version="$(grep -oE '"php"[[:space:]]*:[[:space:]]*"[^"]+"' composer.json \
-                        | grep -oE '[0-9]+\.[0-9]+' | head -1 || true)"
-            if [ -z "$version" ]; then version="8.3"; fi
-            emit php_version "$version"
-          else
-            emit php false
-            emit php_version ""
+          if found 'composer.json'; then
+            if have php && have composer; then echo "PHP already present."; else need "php-cli composer"; fi
           fi
 
           # ---------- Rust ----------
-          if has 'Cargo.toml'; then emit rust true; else emit rust false; fi
+          if found 'Cargo.toml'; then
+            if have cargo; then echo "Rust already present."; else need "cargo"; fi
+          fi
 
-          echo "--- detected ---"
-          cat "$GITHUB_OUTPUT"
+          # ---------- Python (interpreter only) ----------
+          if found 'requirements*.txt' || found 'pyproject.toml' || found 'Pipfile'; then
+            if have python3; then echo "Python already present."; else need "python3"; fi
+          fi
+
+          if [ -z "${NEEDED# }" ]; then
+            echo "No additional toolchain required."
+            exit 0
+          fi
+
+          echo "Installing:$NEEDED"
+          if [ "$APT" -eq 1 ]; then
+            export DEBIAN_FRONTEND=noninteractive
+            apt-get update -qq
+            # shellcheck disable=SC2086
+            apt-get install -y -qq --no-install-recommends $NEEDED \
+              || echo "::warning::Toolchain install failed - SCA may under-report transitive dependencies."
+          fi
+
+          # Maven and the CLI both prefer JAVA_HOME when it is set.
+          if have java; then
+            JAVA_HOME_DIR=$(dirname "$(dirname "$(readlink -f "$(command -v java)")")")
+            echo "JAVA_HOME=$JAVA_HOME_DIR" >> "$GITHUB_ENV"
+            echo "$JAVA_HOME_DIR/bin" >> "$GITHUB_PATH"
+          fi
+
+          for t in java mvn dotnet node go ruby php cargo python3; do
+            have "$t" && echo "  $t -> $(command -v "$t")"
+          done || true
+
+      - name: Run TigerGate scan
+        id: scan
+        run: |
+          set -o pipefail
+          tigergate scan \
+            --type "$SCAN_TYPE" \
+            --scan-scope full \
+            --upload \
+            --quality-gate="$QUALITY_GATE" \
+            2>&1 | tee /tmp/tigergate-scan.log
+
+      - name: Scan result
+        if: always()
+        env:
+          CLI_IMAGE: ${{ inputs.cli_image || 'tigergate/tigergate-cli' }}:${{ inputs.cli_tag || 'latest' }}
+          SCAN_OUTCOME: ${{ steps.scan.outcome }}
+          SCAN_ID: ${{ steps.scan.outputs.scan_id }}
+          GATE_STATUS: ${{ steps.scan.outputs.gate_status }}
+        run: |
+          LOG=/tmp/tigergate-scan.log
+          {
+            echo "## TigerGate scan result"
+            echo
+            echo "| Field | Value |"
+            echo "|---|---|"
+            echo "| CLI image | \`$CLI_IMAGE\` |"
+            echo "| Scan type | \`$SCAN_TYPE\` |"
+            echo "| Quality gate enforced | \`$QUALITY_GATE\` |"
+            echo "| Scan outcome | \`$SCAN_OUTCOME\` |"
+            echo "| Scan ID | ${SCAN_ID:-see log} |"
+            echo "| Gate status | ${GATE_STATUS:-see log} |"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+          echo
+          echo "----- raw CLI output (last 100 lines) -----"
+          if [ -f "$LOG" ]; then tail -100 "$LOG"; else echo "no scan log produced"; fi
 
   fork-notice:
     name: Fork PR (scan skipped)
@@ -208,132 +272,6 @@ jobs:
             echo "This pull request comes from a fork. GitHub does not expose repository"
             echo "secrets to \`pull_request\` runs from forks, so the scan cannot authenticate."
             echo
-            echo "This workflow deliberately does **not** use \`pull_request_target\`: combining"
-            echo "it with a checkout of untrusted PR code would expose the API key to that code"
-            echo "(the same weakness this repository documents as IAC-170 in"
-            echo "\`ci-fixtures/github-actions-insecure.yml\`)."
-            echo
-            echo "Fork changes are covered after merge by the scan on \`main\`, or by a"
-            echo "maintainer running the scan manually."
-          } >> "$GITHUB_STEP_SUMMARY"
-
-  scan:
-    name: TigerGate scan
-    needs: detect
-    if: needs.detect.outputs.is_fork == 'false'
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          fetch-depth: 1
-          persist-credentials: false
-
-      - name: Setup Python
-        if: needs.detect.outputs.python == 'true'
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
-        with:
-          python-version: ${{ needs.detect.outputs.python_version }}
-
-      - name: Setup Node
-        if: needs.detect.outputs.node == 'true'
-        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
-        with:
-          node-version: ${{ needs.detect.outputs.node_version }}
-
-      - name: Setup Java
-        if: needs.detect.outputs.java_maven == 'true' || needs.detect.outputs.java_gradle == 'true'
-        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
-        with:
-          distribution: temurin
-          java-version: ${{ needs.detect.outputs.java_version }}
-
-      - name: Setup .NET (global.json)
-        if: needs.detect.outputs.dotnet == 'true' && hashFiles('global.json') != ''
-        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
-        with:
-          global-json-file: global.json
-
-      - name: Setup .NET (no global.json)
-        if: needs.detect.outputs.dotnet == 'true' && hashFiles('global.json') == ''
-        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
-        with:
-          dotnet-version: 8.0.x
-
-      # Resolves the full transitive graph; the one install this workflow does.
-      - name: Restore .NET dependencies
-        if: needs.detect.outputs.dotnet == 'true'
-        run: dotnet restore
-
-      - name: Setup Go
-        if: needs.detect.outputs.go == 'true'
-        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
-        with:
-          go-version: ${{ needs.detect.outputs.go_version }}
-
-      - name: Setup Ruby
-        if: needs.detect.outputs.ruby == 'true'
-        uses: ruby/setup-ruby@a0102e0972be65f351c307e2d64b9314a57c8073 # v1.324.0
-        with:
-          ruby-version: ${{ needs.detect.outputs.ruby_version }}
-
-      - name: Setup PHP
-        if: needs.detect.outputs.php == 'true'
-        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
-        with:
-          php-version: ${{ needs.detect.outputs.php_version }}
-
-      - name: Setup Rust
-        if: needs.detect.outputs.rust == 'true'
-        run: rustup toolchain install stable --profile minimal
-
-      # >>> REPLACE with the command from your TigerGate CI/CD Pipeline page. <<<
-      # Alternatives: `pip install tigergate-cli && tigergate scan --path .`
-      # or `curl -fsSL "$TIGERGATE_API_URL/install.sh" | sh`.
-      # Image comes from the TIGERGATE_CLI_IMAGE repository variable.
-      - name: Run TigerGate scan
-        env:
-          TIGERGATE_API_KEY: ${{ secrets.TIGERGATE_API_KEY }}
-          TIGERGATE_API_URL: ${{ secrets.TIGERGATE_API_URL }}
-          TIGERGATE_CLI_IMAGE: ${{ vars.TIGERGATE_CLI_IMAGE }}
-          # Report-only: 241 intentional findings would fail every PR otherwise.
-          TIGERGATE_FAIL_ON: ${{ vars.TIGERGATE_FAIL_ON }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          set -euo pipefail
-
-          if [ -z "${TIGERGATE_API_KEY:-}" ] || [ -z "${TIGERGATE_API_URL:-}" ]; then
-            echo "::error title=TigerGate not configured::Set the TIGERGATE_API_KEY and TIGERGATE_API_URL repository secrets."
-            exit 1
-          fi
-
-          image="${TIGERGATE_CLI_IMAGE:-tigergate/cli:latest}"
-          fail_on="${TIGERGATE_FAIL_ON:-none}"
-
-          docker run --rm \
-            -v "$PWD:/repo" \
-            -w /repo \
-            -e TIGERGATE_API_KEY \
-            -e TIGERGATE_API_URL \
-            "$image" \
-            scan \
-              --path /repo \
-              --scanners sca,sast,secret,iac,sbom \
-              --pr "$PR_NUMBER" \
-              --commit "$COMMIT_SHA" \
-              --fail-on "$fail_on"
-
-      - name: Summarise
-        if: always()
-        env:
-          API_URL: ${{ secrets.TIGERGATE_API_URL }}
-        run: |
-          {
-            echo "### TigerGate scan"
-            echo
-            echo "Scanners: SCA, SAST, secrets, IaC, SBOM"
-            echo
-            echo "Results are stored in TigerGate at ${API_URL:-the configured instance}."
+            echo "Fork changes are covered after merge, or by a maintainer running this"
+            echo "workflow manually via workflow_dispatch."
           } >> "$GITHUB_STEP_SUMMARY"
