@@ -1,79 +1,89 @@
-# TigerGate security scanning on every Pull Request.
-#
-# Design notes for this repository (see SECURITY_FIXTURES.md):
-#   * Dependencies are NEVER installed. The pins in requirements*.txt are
-#     deliberately vulnerable and unbuildable on modern Python (lxml 4.6.2,
-#     numpy 1.16.0, cryptography 2.2 have no wheels and fail to compile), so
-#     `pip install -r requirements.txt` would fail every PR. TigerGate reads the
-#     manifests statically, which is all this repo needs.
-#   * Terraform/Kubernetes/CloudFormation are scanned as files: no `terraform
-#     init` (there are no module or backend blocks) and no `docker build`.
-#   * Runtime setup is driven by the `detect` job, so adding a pom.xml,
-#     package.json, go.mod, ... later switches the matching setup step on
-#     without editing this file.
-#   * Actions are pinned to commit SHAs and no `${{ }}` expression is
-#     interpolated into a `run:` body, so this workflow passes the same IaC and
-#     CI rules TigerGate applies to the fixtures in ci-fixtures/.
+# TigerGate scan on every PR. Dependencies are never installed: the pins in
+# requirements*.txt are deliberately unbuildable (see SECURITY_FIXTURES.md).
 
 name: TigerGate
 
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+  workflow_dispatch:
+    inputs:
+      cli_image:
+        description: "TigerGate CLI image (without tag)"
+        type: string
+        required: true
+        default: tigergate/tigergate-cli
+      cli_tag:
+        description: "TigerGate CLI image tag"
+        type: string
+        required: true
+        default: latest
+      scan_type:
+        description: "Scan type to run"
+        type: choice
+        required: true
+        default: all
+        options:
+          - all
+          - sast
+          - sca
+          - secrets
+          - iac
+      quality_gate:
+        description: "Enforce the quality gate (fails the job when the gate fails)"
+        type: boolean
+        required: true
+        default: false
 
-# Least privilege: TigerGate reads the checkout and sends results to its own
-# backend, so the job needs nothing else.
-#   pull-requests: write  -> add ONLY if you enable PR comments
-#   security-events: write -> add ONLY if you upload SARIF to code scanning
 permissions:
   contents: read
+  statuses: write
+  pull-requests: write
 
 concurrency:
-  group: tigergate-${{ github.event.pull_request.number }}
+  group: tigergate-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  detect:
-    name: Detect ecosystems
+  scan:
+    name: TigerGate ${{ inputs.scan_type || 'all' }} scan
+    # Fork PRs cannot read secrets, so TIGERGATE_API_KEY would be empty.
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    timeout-minutes: 5
-    outputs:
-      is_fork: ${{ steps.fork.outputs.is_fork }}
-      python: ${{ steps.probe.outputs.python }}
-      node: ${{ steps.probe.outputs.node }}
-      java_maven: ${{ steps.probe.outputs.java_maven }}
-      java_gradle: ${{ steps.probe.outputs.java_gradle }}
-      dotnet: ${{ steps.probe.outputs.dotnet }}
-      go: ${{ steps.probe.outputs.go }}
-      ruby: ${{ steps.probe.outputs.ruby }}
-      php: ${{ steps.probe.outputs.php }}
-      rust: ${{ steps.probe.outputs.rust }}
-      python_version: ${{ steps.probe.outputs.python_version }}
-      node_version: ${{ steps.probe.outputs.node_version }}
-      java_version: ${{ steps.probe.outputs.java_version }}
-      go_version: ${{ steps.probe.outputs.go_version }}
-      ruby_version: ${{ steps.probe.outputs.ruby_version }}
-      php_version: ${{ steps.probe.outputs.php_version }}
+    timeout-minutes: 30
+
+    # The whole job runs inside the selected TigerGate CLI image.
+    container:
+      image: ${{ inputs.cli_image || 'tigergate/tigergate-cli' }}:${{ inputs.cli_tag || 'latest' }}
+
+    env:
+      TIGERGATE_API_KEY: ${{ secrets.TIGERGATE_API_KEY }}
+      TIGERGATE_API_URL: https://api.staging.tigergate.dev
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # PR runs use the defaults; workflow_dispatch overrides them.
+      SCAN_TYPE: ${{ inputs.scan_type || 'all' }}
+      # Report-only by default: this repo holds 241 intentional findings, so an
+      # enforced gate would fail every PR until they are baselined.
+      QUALITY_GATE: ${{ inputs.quality_gate || false }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          # Full history: the scanner reads git metadata and --scan-scope full
+          # needs more than a shallow clone.
+          fetch-depth: 0
           persist-credentials: false
 
-      - name: Identify fork pull requests
-        id: fork
-        env:
-          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
-          BASE_REPO: ${{ github.repository }}
+      - name: Configure git safe.directory
+        # The container runs as root while the runner user owns the workspace,
+        # so git refuses to operate on it ("dubious ownership") until trusted.
         run: |
-          if [ "$HEAD_REPO" = "$BASE_REPO" ]; then
-            echo "is_fork=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "is_fork=true" >> "$GITHUB_OUTPUT"
-          fi
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git config --global --add safe.directory '*'
+          git -C "$GITHUB_WORKSPACE" rev-parse --short HEAD
 
-      - name: Probe manifests and version files
-        id: probe
+      - name: Check configuration
         run: |
           set -euo pipefail
 
@@ -92,8 +102,7 @@ jobs:
               version="$(grep -oE 'requires-python[[:space:]]*=[[:space:]]*"[^"]+"' pyproject.toml \
                           | grep -oE '[0-9]+\.[0-9]+' | head -1 || true)"
             fi
-            # This repo declares >=3.8, but scripts/build_expected_findings.py uses
-            # str.removeprefix (3.9+) and the fixtures were authored on 3.10.
+            # Repo declares >=3.8 but scripts/ use str.removeprefix (3.9+).
             case "$version" in
               ""|3.8|3.7|3.6|2.*) version="3.10" ;;
             esac
@@ -186,20 +195,18 @@ jobs:
 
   fork-notice:
     name: Fork PR (scan skipped)
-    needs: detect
-    if: needs.detect.outputs.is_fork == 'true'
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - name: Explain why the scan did not run
         run: |
-          echo "::notice title=TigerGate skipped::Pull requests from forks cannot read repository secrets, so the TigerGate API key is unavailable and the scan is skipped by design."
+          echo "::notice title=TigerGate skipped::Fork pull requests cannot read repository secrets, so TIGERGATE_API_KEY is unavailable."
           {
             echo "### TigerGate scan skipped"
             echo
             echo "This pull request comes from a fork. GitHub does not expose repository"
-            echo "secrets to \`pull_request\` runs from forks, so \`TIGERGATE_API_KEY\` is empty"
-            echo "and the scan cannot authenticate."
+            echo "secrets to \`pull_request\` runs from forks, so the scan cannot authenticate."
             echo
             echo "This workflow deliberately does **not** use \`pull_request_target\`: combining"
             echo "it with a checkout of untrusted PR code would expose the API key to that code"
@@ -220,27 +227,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          # TigerGate scans the working tree; full history is not needed.
           fetch-depth: 1
           persist-credentials: false
-
-      # ------------------------------------------------------------------
-      # Runtime setup. Only the steps whose ecosystem was detected will run.
-      # Today that is Python alone; the rest stay dormant until a matching
-      # manifest appears in the repository.
-      #
-      # No dependency installation happens anywhere in this job. Add an
-      # install/restore step ONLY for an ecosystem where TigerGate needs the
-      # resolved graph (e.g. `dotnet restore`, `mvn dependency:go-offline`) and
-      # where those dependencies can actually be resolved.
-      # ------------------------------------------------------------------
 
       - name: Setup Python
         if: needs.detect.outputs.python == 'true'
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: ${{ needs.detect.outputs.python_version }}
-          # No `cache: pip`: nothing is installed, so a cache would only add noise.
 
       - name: Setup Node
         if: needs.detect.outputs.node == 'true'
@@ -254,10 +248,7 @@ jobs:
         with:
           distribution: temurin
           java-version: ${{ needs.detect.outputs.java_version }}
-          # Gradle projects: prefer the committed ./gradlew wrapper over a
-          # runner-installed Gradle so the project's own version is used.
 
-      # global.json pins the SDK when present; otherwise the latest LTS is used.
       - name: Setup .NET (global.json)
         if: needs.detect.outputs.dotnet == 'true' && hashFiles('global.json') != ''
         uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
@@ -270,10 +261,8 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
+      # Resolves the full transitive graph; the one install this workflow does.
       - name: Restore .NET dependencies
-        # dotnet restore is what turns declared PackageReference entries into a
-        # complete resolved graph, so it runs for .NET even though this workflow
-        # otherwise avoids installs.
         if: needs.detect.outputs.dotnet == 'true'
         run: dotnet restore
 
@@ -299,34 +288,16 @@ jobs:
         if: needs.detect.outputs.rust == 'true'
         run: rustup toolchain install stable --profile minimal
 
-      # ------------------------------------------------------------------
-      # TigerGate CLI.
-      #
-      # >>> CONFIGURE THIS STEP TO MATCH YOUR INSTANCE <<<
-      # The repository defines no TigerGate invocation, so this uses the Docker
-      # CLI form. Replace the image and arguments with the command shown on your
-      # TigerGate "CI/CD Pipeline" page. Two common alternatives:
-      #
-      #   pip-installed CLI:
-      #     python -m pip install --upgrade tigergate-cli
-      #     tigergate scan --path .
-      #
-      #   installer script:
-      #     curl -fsSL "$TIGERGATE_API_URL/install.sh" | sh
-      #     tigergate scan --path .
-      #
-      # Set the image via the TIGERGATE_CLI_IMAGE repository variable
-      # (Settings > Secrets and variables > Actions > Variables).
-      # ------------------------------------------------------------------
+      # >>> REPLACE with the command from your TigerGate CI/CD Pipeline page. <<<
+      # Alternatives: `pip install tigergate-cli && tigergate scan --path .`
+      # or `curl -fsSL "$TIGERGATE_API_URL/install.sh" | sh`.
+      # Image comes from the TIGERGATE_CLI_IMAGE repository variable.
       - name: Run TigerGate scan
         env:
           TIGERGATE_API_KEY: ${{ secrets.TIGERGATE_API_KEY }}
           TIGERGATE_API_URL: ${{ secrets.TIGERGATE_API_URL }}
           TIGERGATE_CLI_IMAGE: ${{ vars.TIGERGATE_CLI_IMAGE }}
-          # Report-only by default: this repository contains 241 intentional
-          # findings, so a severity gate would fail every PR. Set the
-          # TIGERGATE_FAIL_ON repository variable (e.g. "critical") once those
-          # fixtures are baselined in a TigerGate policy.
+          # Report-only: 241 intentional findings would fail every PR otherwise.
           TIGERGATE_FAIL_ON: ${{ vars.TIGERGATE_FAIL_ON }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
