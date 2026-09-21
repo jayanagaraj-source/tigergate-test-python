@@ -1,0 +1,368 @@
+# TigerGate security scanning on every Pull Request.
+#
+# Design notes for this repository (see SECURITY_FIXTURES.md):
+#   * Dependencies are NEVER installed. The pins in requirements*.txt are
+#     deliberately vulnerable and unbuildable on modern Python (lxml 4.6.2,
+#     numpy 1.16.0, cryptography 2.2 have no wheels and fail to compile), so
+#     `pip install -r requirements.txt` would fail every PR. TigerGate reads the
+#     manifests statically, which is all this repo needs.
+#   * Terraform/Kubernetes/CloudFormation are scanned as files: no `terraform
+#     init` (there are no module or backend blocks) and no `docker build`.
+#   * Runtime setup is driven by the `detect` job, so adding a pom.xml,
+#     package.json, go.mod, ... later switches the matching setup step on
+#     without editing this file.
+#   * Actions are pinned to commit SHAs and no `${{ }}` expression is
+#     interpolated into a `run:` body, so this workflow passes the same IaC and
+#     CI rules TigerGate applies to the fixtures in ci-fixtures/.
+
+name: TigerGate
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+# Least privilege: TigerGate reads the checkout and sends results to its own
+# backend, so the job needs nothing else.
+#   pull-requests: write  -> add ONLY if you enable PR comments
+#   security-events: write -> add ONLY if you upload SARIF to code scanning
+permissions:
+  contents: read
+
+concurrency:
+  group: tigergate-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  detect:
+    name: Detect ecosystems
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      is_fork: ${{ steps.fork.outputs.is_fork }}
+      python: ${{ steps.probe.outputs.python }}
+      node: ${{ steps.probe.outputs.node }}
+      java_maven: ${{ steps.probe.outputs.java_maven }}
+      java_gradle: ${{ steps.probe.outputs.java_gradle }}
+      dotnet: ${{ steps.probe.outputs.dotnet }}
+      go: ${{ steps.probe.outputs.go }}
+      ruby: ${{ steps.probe.outputs.ruby }}
+      php: ${{ steps.probe.outputs.php }}
+      rust: ${{ steps.probe.outputs.rust }}
+      python_version: ${{ steps.probe.outputs.python_version }}
+      node_version: ${{ steps.probe.outputs.node_version }}
+      java_version: ${{ steps.probe.outputs.java_version }}
+      go_version: ${{ steps.probe.outputs.go_version }}
+      ruby_version: ${{ steps.probe.outputs.ruby_version }}
+      php_version: ${{ steps.probe.outputs.php_version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Identify fork pull requests
+        id: fork
+        env:
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          BASE_REPO: ${{ github.repository }}
+        run: |
+          if [ "$HEAD_REPO" = "$BASE_REPO" ]; then
+            echo "is_fork=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_fork=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Probe manifests and version files
+        id: probe
+        run: |
+          set -euo pipefail
+
+          has() { [ -n "$(find . -path ./.git -prune -o -name "$1" -print -quit)" ]; }
+          emit() { echo "$1=$2" >> "$GITHUB_OUTPUT"; }
+
+          # ---------- Python ----------
+          if has 'pyproject.toml' || has 'requirements*.txt' || has 'Pipfile' \
+             || has 'poetry.lock' || has 'setup.py' || has 'setup.cfg'; then
+            emit python true
+            # Version precedence: .python-version > pyproject requires-python floor > default
+            version=""
+            if [ -f .python-version ]; then
+              version="$(tr -d '[:space:]' < .python-version)"
+            elif [ -f pyproject.toml ]; then
+              version="$(grep -oE 'requires-python[[:space:]]*=[[:space:]]*"[^"]+"' pyproject.toml \
+                          | grep -oE '[0-9]+\.[0-9]+' | head -1 || true)"
+            fi
+            # This repo declares >=3.8, but scripts/build_expected_findings.py uses
+            # str.removeprefix (3.9+) and the fixtures were authored on 3.10.
+            case "$version" in
+              ""|3.8|3.7|3.6|2.*) version="3.10" ;;
+            esac
+            emit python_version "$version"
+          else
+            emit python false
+            emit python_version ""
+          fi
+
+          # ---------- Node ----------
+          if has 'package.json'; then
+            emit node true
+            version=""
+            if [ -f .nvmrc ]; then version="$(tr -d '[:space:]v' < .nvmrc)"; fi
+            if [ -z "$version" ] && [ -f .node-version ]; then version="$(tr -d '[:space:]v' < .node-version)"; fi
+            if [ -z "$version" ]; then version="lts/*"; fi
+            emit node_version "$version"
+          else
+            emit node false
+            emit node_version ""
+          fi
+
+          # ---------- Java ----------
+          if has 'pom.xml'; then emit java_maven true; else emit java_maven false; fi
+          if has 'build.gradle' || has 'build.gradle.kts'; then
+            emit java_gradle true
+          else
+            emit java_gradle false
+          fi
+          version=""
+          if [ -f .java-version ]; then
+            version="$(tr -d '[:space:]' < .java-version)"
+          elif [ -f pom.xml ]; then
+            version="$(grep -oE '<maven.compiler.release>[0-9]+' pom.xml | grep -oE '[0-9]+' | head -1 || true)"
+            if [ -z "$version" ]; then
+              version="$(grep -oE '<java.version>[0-9.]+' pom.xml | grep -oE '[0-9]+' | head -1 || true)"
+            fi
+          fi
+          if [ -z "$version" ]; then version="21"; fi
+          emit java_version "$version"
+
+          # ---------- .NET ----------
+          if has 'global.json' || has '*.csproj' || has '*.fsproj' || has '*.vbproj' \
+             || has 'Directory.Packages.props'; then
+            emit dotnet true
+          else
+            emit dotnet false
+          fi
+
+          # ---------- Go ----------
+          if has 'go.mod'; then
+            emit go true
+            version="$(grep -oE '^go[[:space:]]+[0-9]+\.[0-9]+' go.mod | grep -oE '[0-9]+\.[0-9]+' | head -1 || true)"
+            if [ -z "$version" ]; then version="stable"; fi
+            emit go_version "$version"
+          else
+            emit go false
+            emit go_version ""
+          fi
+
+          # ---------- Ruby ----------
+          if has 'Gemfile'; then
+            emit ruby true
+            version=""
+            if [ -f .ruby-version ]; then version="$(tr -d '[:space:]' < .ruby-version)"; fi
+            if [ -z "$version" ]; then version="3.3"; fi
+            emit ruby_version "$version"
+          else
+            emit ruby false
+            emit ruby_version ""
+          fi
+
+          # ---------- PHP ----------
+          if has 'composer.json'; then
+            emit php true
+            version="$(grep -oE '"php"[[:space:]]*:[[:space:]]*"[^"]+"' composer.json \
+                        | grep -oE '[0-9]+\.[0-9]+' | head -1 || true)"
+            if [ -z "$version" ]; then version="8.3"; fi
+            emit php_version "$version"
+          else
+            emit php false
+            emit php_version ""
+          fi
+
+          # ---------- Rust ----------
+          if has 'Cargo.toml'; then emit rust true; else emit rust false; fi
+
+          echo "--- detected ---"
+          cat "$GITHUB_OUTPUT"
+
+  fork-notice:
+    name: Fork PR (scan skipped)
+    needs: detect
+    if: needs.detect.outputs.is_fork == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Explain why the scan did not run
+        run: |
+          echo "::notice title=TigerGate skipped::Pull requests from forks cannot read repository secrets, so the TigerGate API key is unavailable and the scan is skipped by design."
+          {
+            echo "### TigerGate scan skipped"
+            echo
+            echo "This pull request comes from a fork. GitHub does not expose repository"
+            echo "secrets to \`pull_request\` runs from forks, so \`TIGERGATE_API_KEY\` is empty"
+            echo "and the scan cannot authenticate."
+            echo
+            echo "This workflow deliberately does **not** use \`pull_request_target\`: combining"
+            echo "it with a checkout of untrusted PR code would expose the API key to that code"
+            echo "(the same weakness this repository documents as IAC-170 in"
+            echo "\`ci-fixtures/github-actions-insecure.yml\`)."
+            echo
+            echo "Fork changes are covered after merge by the scan on \`main\`, or by a"
+            echo "maintainer running the scan manually."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  scan:
+    name: TigerGate scan
+    needs: detect
+    if: needs.detect.outputs.is_fork == 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          # TigerGate scans the working tree; full history is not needed.
+          fetch-depth: 1
+          persist-credentials: false
+
+      # ------------------------------------------------------------------
+      # Runtime setup. Only the steps whose ecosystem was detected will run.
+      # Today that is Python alone; the rest stay dormant until a matching
+      # manifest appears in the repository.
+      #
+      # No dependency installation happens anywhere in this job. Add an
+      # install/restore step ONLY for an ecosystem where TigerGate needs the
+      # resolved graph (e.g. `dotnet restore`, `mvn dependency:go-offline`) and
+      # where those dependencies can actually be resolved.
+      # ------------------------------------------------------------------
+
+      - name: Setup Python
+        if: needs.detect.outputs.python == 'true'
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: ${{ needs.detect.outputs.python_version }}
+          # No `cache: pip`: nothing is installed, so a cache would only add noise.
+
+      - name: Setup Node
+        if: needs.detect.outputs.node == 'true'
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: ${{ needs.detect.outputs.node_version }}
+
+      - name: Setup Java
+        if: needs.detect.outputs.java_maven == 'true' || needs.detect.outputs.java_gradle == 'true'
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: ${{ needs.detect.outputs.java_version }}
+          # Gradle projects: prefer the committed ./gradlew wrapper over a
+          # runner-installed Gradle so the project's own version is used.
+
+      # global.json pins the SDK when present; otherwise the latest LTS is used.
+      - name: Setup .NET (global.json)
+        if: needs.detect.outputs.dotnet == 'true' && hashFiles('global.json') != ''
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
+        with:
+          global-json-file: global.json
+
+      - name: Setup .NET (no global.json)
+        if: needs.detect.outputs.dotnet == 'true' && hashFiles('global.json') == ''
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore .NET dependencies
+        # dotnet restore is what turns declared PackageReference entries into a
+        # complete resolved graph, so it runs for .NET even though this workflow
+        # otherwise avoids installs.
+        if: needs.detect.outputs.dotnet == 'true'
+        run: dotnet restore
+
+      - name: Setup Go
+        if: needs.detect.outputs.go == 'true'
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: ${{ needs.detect.outputs.go_version }}
+
+      - name: Setup Ruby
+        if: needs.detect.outputs.ruby == 'true'
+        uses: ruby/setup-ruby@a0102e0972be65f351c307e2d64b9314a57c8073 # v1.324.0
+        with:
+          ruby-version: ${{ needs.detect.outputs.ruby_version }}
+
+      - name: Setup PHP
+        if: needs.detect.outputs.php == 'true'
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
+        with:
+          php-version: ${{ needs.detect.outputs.php_version }}
+
+      - name: Setup Rust
+        if: needs.detect.outputs.rust == 'true'
+        run: rustup toolchain install stable --profile minimal
+
+      # ------------------------------------------------------------------
+      # TigerGate CLI.
+      #
+      # >>> CONFIGURE THIS STEP TO MATCH YOUR INSTANCE <<<
+      # The repository defines no TigerGate invocation, so this uses the Docker
+      # CLI form. Replace the image and arguments with the command shown on your
+      # TigerGate "CI/CD Pipeline" page. Two common alternatives:
+      #
+      #   pip-installed CLI:
+      #     python -m pip install --upgrade tigergate-cli
+      #     tigergate scan --path .
+      #
+      #   installer script:
+      #     curl -fsSL "$TIGERGATE_API_URL/install.sh" | sh
+      #     tigergate scan --path .
+      #
+      # Set the image via the TIGERGATE_CLI_IMAGE repository variable
+      # (Settings > Secrets and variables > Actions > Variables).
+      # ------------------------------------------------------------------
+      - name: Run TigerGate scan
+        env:
+          TIGERGATE_API_KEY: ${{ secrets.TIGERGATE_API_KEY }}
+          TIGERGATE_API_URL: ${{ secrets.TIGERGATE_API_URL }}
+          TIGERGATE_CLI_IMAGE: ${{ vars.TIGERGATE_CLI_IMAGE }}
+          # Report-only by default: this repository contains 241 intentional
+          # findings, so a severity gate would fail every PR. Set the
+          # TIGERGATE_FAIL_ON repository variable (e.g. "critical") once those
+          # fixtures are baselined in a TigerGate policy.
+          TIGERGATE_FAIL_ON: ${{ vars.TIGERGATE_FAIL_ON }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${TIGERGATE_API_KEY:-}" ] || [ -z "${TIGERGATE_API_URL:-}" ]; then
+            echo "::error title=TigerGate not configured::Set the TIGERGATE_API_KEY and TIGERGATE_API_URL repository secrets."
+            exit 1
+          fi
+
+          image="${TIGERGATE_CLI_IMAGE:-tigergate/cli:latest}"
+          fail_on="${TIGERGATE_FAIL_ON:-none}"
+
+          docker run --rm \
+            -v "$PWD:/repo" \
+            -w /repo \
+            -e TIGERGATE_API_KEY \
+            -e TIGERGATE_API_URL \
+            "$image" \
+            scan \
+              --path /repo \
+              --scanners sca,sast,secret,iac,sbom \
+              --pr "$PR_NUMBER" \
+              --commit "$COMMIT_SHA" \
+              --fail-on "$fail_on"
+
+      - name: Summarise
+        if: always()
+        env:
+          API_URL: ${{ secrets.TIGERGATE_API_URL }}
+        run: |
+          {
+            echo "### TigerGate scan"
+            echo
+            echo "Scanners: SCA, SAST, secrets, IaC, SBOM"
+            echo
+            echo "Results are stored in TigerGate at ${API_URL:-the configured instance}."
+          } >> "$GITHUB_STEP_SUMMARY"
