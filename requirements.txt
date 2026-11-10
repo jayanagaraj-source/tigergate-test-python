@@ -30,3 +30,4 @@ paramiko==2.4.1
 SQLAlchemy==1.2.17
 # tg-expect: SCA-014 | critical | CVE-2019-6446 | numpy 1.16.0 arbitrary code execution via pickle in numpy.load
 numpy==1.16.0
+transformers==4.18.0
